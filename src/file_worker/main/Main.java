@@ -6,23 +6,30 @@ import org.apache.commons.lang3.ArrayUtils;
 import util.IniParser;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 
 public class Main
 {
     public static void main(String[] args)
     {
-        try {
-            String directory = IniParser.parse("settings.ini").get("test_directory");
-            MD5Execution md5 = new MD5Execution();
-            FileWorker fw = new FileWorker(md5, new File(directory), true);
-            boolean res = fw.execute();
-            System.out.println(res);
-            Byte[] a = md5.getHash(new File(directory + "/folder1"));
-            System.out.println(Hex.encodeHexString(ArrayUtils.toPrimitive(a)));
+        Map<String, String> ini = IniParser.parse("settings.ini");
+        if(ini.containsKey("test_directory")) {
+            try {
+                MD5Execution md5 = new MD5Execution();
+                FileWorker fw = new FileWorker(md5, new File(ini.get("test_directory")), true);
+                boolean res = fw.execute();
+                System.out.println(res);
+                Byte[] a = md5.getHash(new File(ini.get("test_directory") + "/folder1"));
+                System.out.println(Hex.encodeHexString(ArrayUtils.toPrimitive(a)));
+            } catch (IOException | NoSuchAlgorithmException e) {
+                System.err.println(e.getMessage());
+            }
         }
-        catch (Exception e){
-            System.out.println(e.getMessage());
+        else {
+            System.err.println("Ini file is not present or incomplete.");
         }
     }
 }
