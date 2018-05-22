@@ -4,11 +4,11 @@ import file_worker.FileWorker;
 import file_worker.executable.MD5Execution;
 import thread_dispatcher.threaded_task.ThreadedTask;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -28,29 +28,27 @@ public class CommandTask extends ThreadedTask {
     @Override
     public void start() {
         try {
-            String result = readUntil(socket.getInputStream(), "\n\n");
+            byte[] result = readAll(socket.getInputStream());
+            if (result == null)
+                return;
             OutputStream out = socket.getOutputStream();
-            out.write(execute(result));
+            out.write(execute(new String(result, StandardCharsets.UTF_8)));
             out.close();
             socket.close();
         } catch (IOException ignored) {}
     }
 
-    private String readUntil(InputStream stream, String end) throws IOException {
-        StringBuilder result = new StringBuilder();
-        int index = 0;
-        while(true) {
-            char next = (char)stream.read();
-            if (next == end.charAt(index)) {
-                index++;
-                if (index == end.length())
-                    break;
-            }
-            else
-                index = 0;
-            result.append(next);
-        }
-        return result.toString();
+    private byte[] readAll(InputStream stream) throws IOException {
+        byte[] rawCount = new byte[2];
+        if(stream.read(rawCount, 0, 2) < 2)
+            return null;
+        ByteBuffer buffer = ByteBuffer.wrap(rawCount);
+        short length = buffer.getShort();
+
+        byte[] result = new byte[length];
+        if(stream.read(result, 0, length) != length)
+            return null;
+        return result;
     }
 
     private byte[] execute(String command) {

@@ -10,5 +10,8 @@
     <orderEntry type="library" name="commons-codec-1.11" level="project" />
     <orderEntry type="library" name="commons-io-2.6" level="project" />
     <orderEntry type="library" name="commons-lang3-3.7" level="project" />
+    <orderEntry type="library" name="org.apache.codec_windows" level="application" />
+    <orderEntry type="library" name="org.apache.io_windows" level="application" />
+    <orderEntry type="library" name="org.apache.lang_windows" level="application" />
   </component>
 </module>
