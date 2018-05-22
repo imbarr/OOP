@@ -28,33 +28,26 @@ public class CommandTask extends ThreadedTask {
     @Override
     public void start() {
         try {
-            String result = read(socket.getInputStream());
-            if(result != null) {
-                OutputStream out = socket.getOutputStream();
-                out.write(execute(result));
-                out.close();
-            }
+            String result = readUntil(socket.getInputStream(), "\n\n");
+            OutputStream out = socket.getOutputStream();
+            out.write(execute(result));
+            out.close();
             socket.close();
         } catch (IOException ignored) {}
     }
 
-    private String read(InputStream stream) throws IOException {
-        try {
-            int length = Integer.parseInt(readUntil(stream, ' '));
-            byte[] result = new byte[length];
-            stream.read(result, 0, length);
-            return new String(result, StandardCharsets.UTF_8);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private String readUntil(InputStream stream, char end) throws IOException {
+    private String readUntil(InputStream stream, String end) throws IOException {
         StringBuilder result = new StringBuilder();
+        int index = 0;
         while(true) {
             char next = (char)stream.read();
-            if (next == end)
-                break;
+            if (next == end.charAt(index)) {
+                index++;
+                if (index == end.length())
+                    break;
+            }
+            else
+                index = 0;
             result.append(next);
         }
         return result.toString();
