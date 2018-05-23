@@ -9,5 +9,5 @@ public enum Types {
     Double,
     Character,
     Boolean,
-    String;
+    String
 }

@@ -1,26 +1,27 @@
 package serializator;
-
 import javafx.util.Pair;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Serializator {
+    public static final String usedPackage = "serializator.test_classes";
+
     public static final String preamble = "<serialized>";
     public static final char screeningSymbol = '#';
     public static final String service = "()|" + screeningSymbol;
 
-    public String serialize(Object object) {
-        return preamble + object.getClass().getSimpleName() + '(' + allFieldsToString(object) + ')';
+    public byte[] serialize(Object object) {
+        return (preamble + object.getClass().getSimpleName() + '(' + allFieldsToString(object) + ')')
+                .getBytes(StandardCharsets.UTF_8);
     }
 
     private List<Field> getAllFields(Object object) {
@@ -87,14 +88,20 @@ public class Serializator {
         return sb.toString();
     }
 
-    public Object deserialize(byte[] raw) {
+    public Object deserialize(byte[] raw) throws Exception {
         StringReader reader = new StringReader(new String(raw, StandardCharsets.UTF_8));
-
+        String start = readUntil(reader, '(');
+        if(!start.startsWith(preamble))
+            throw new IllegalArgumentException("Data does not start with preamble");
+        Object result = Class.forName(usedPackage + "." + start.substring(preamble.length(), start.length()))
+                .getConstructor().newInstance();
+        readFields(reader, result);
+        return result;
     }
 
-    private void readFields(StringReader reader, Object object) throws IOException{
+    private void readFields(StringReader reader, Object object) throws ParseException {
         while (true) {
-            int next = reader.read();
+            int next = safeRead(reader);
             if(next == -1)
                 throw new IllegalArgumentException("Unexpected end of stream");
             if((char)next == '(')
@@ -106,70 +113,113 @@ public class Serializator {
         }
     }
 
-    private void readField(StringReader reader, Object object) {
+    private void readField(StringReader reader, Object object) throws ParseException {
+        try {
+            Field field = object.getClass().getDeclaredField(readUntil(reader, '|'));
+            field.setAccessible(true);
+            String category = readUntil(reader, '|');
+            String className = readUntil(reader, '|');
 
-    }
-
-    private void setPrimitive(StringReader reader, Field field, Object object) {
-
-    }
-
-    /*private List<String> splitBrackets(String string) {
-        if(!string.contains("(") && !string.contains(")"))
-            return null;
-
-        List<String> result = new ArrayList<>();
-        int depth = 0;
-        int start = 0;
-        boolean screen = false;
-        for(int i = 0; i < string.length(); i++) {
-            char current = string.charAt(i);
-            if(screen)
-                screen = false;
-            if(current == screeningSymbol)
-                screen = true;
-            else if(current == '(')
-                depth++;
-            else if(current == ')') {
-                depth--;
-                if(depth == 0) {
-                    result.add(string.substring(start + 1, i));
-                    start = i + 1;
+            if (category.equals("o")) {
+                Constructor<?> constructor = Class.forName(usedPackage + "." + className).getConstructor();
+                constructor.setAccessible(true);
+                Object n = constructor.newInstance();
+                readFields(reader, n);
+                try {
+                    field.set(object, n);
+                } catch (IllegalArgumentException e) {
+                    throw new ParseException("Field has a different type", e);
                 }
-            }
-            else if (depth == 0)
-                throw new IllegalArgumentException();
-        }
-        if(depth != 0)
+            } else if (category.equals("p"))
+                setPrimitiveOrSpecial(readUntil(reader, ')'), Types.valueOf(className), field, object);
+        } catch (NoSuchFieldException e) {
+            throw new ParseException("Field not found", e);
+        } catch (ClassNotFoundException e) {
+            throw new ParseException("Class not found", e);
+        } catch (NoSuchMethodException e) {
+            throw new ParseException("Class does not have a constructor without parameters", e);
+        } catch (InvocationTargetException e) {
+            throw new ParseException("Class constructor threw a exception", e);
+        } catch (InstantiationException e) {
+            throw new ParseException("Class is abstract", e);
+        } catch (IllegalAccessException e) {
             throw new IllegalArgumentException();
-        return result;
-    }*/
+        }
+    }
 
-    public String readUntil(StringReader string, char symbol) throws IOException {
+    private void setPrimitiveOrSpecial(String value, Types type, Field field, Object object)
+            throws ParseException, IllegalAccessException {
+        try {
+            if (type == Types.Byte)
+                field.setByte(object, Byte.valueOf(value));
+            if (type == Types.Short)
+                field.setShort(object, Short.valueOf(value));
+            if (type == Types.Integer)
+                field.setInt(object, Integer.valueOf(value));
+            if (type == Types.Long)
+                field.setLong(object, Long.valueOf(value));
+            if (type == Types.Float)
+                field.setFloat(object, Float.valueOf(value));
+            if (type == Types.Double)
+                field.setDouble(object, Double.valueOf(value));
+            if (type == Types.Character)
+                field.setChar(object, charValueOf(value));
+            if (type == Types.Boolean)
+                field.setBoolean(object, booleanValueOf(value));
+            if (type == Types.String)
+                field.set(object, value);
+        } catch (NumberFormatException e) {
+            throw new ParseException("Failed parsing to " + type.toString(), e);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException("Field has a different type", e);
+        }
+    }
+
+    private char charValueOf(String s) {
+        if(s.length() != 1)
+            throw new NumberFormatException();
+        return s.charAt(0);
+    }
+
+    private boolean booleanValueOf(String s) {
+        if(s.equals("true"))
+            return true;
+        else if(s.equals("false"))
+            return false;
+        throw new NumberFormatException();
+    }
+
+    private String readUntil(StringReader reader, char symbol) throws ParseException {
         StringBuilder sb = new StringBuilder();
         boolean screen = false;
         while (true) {
-            int next = string.read();
-            if(next == -1)
-                throw new IllegalArgumentException("Unexpected end of stream");
-            char current = (char)next;
+            int next = safeRead(reader);
+            if (next == -1)
+                throw new ParseException("Unexpected end of stream");
+            char current = (char) next;
 
-            if(screen)
-                if(service.indexOf(current) != -1) {
+            if (screen)
+                if (service.indexOf(current) != -1) {
                     sb.append(current);
                     screen = false;
-                }
-                else
-                    throw new IllegalArgumentException("Invalid screening");
+                } else
+                    throw new ParseException("Invalid screening");
+            else if (current == symbol)
+                return sb.toString();
+            else if (current == screeningSymbol)
+                screen = true;
+            else if (service.indexOf(current) == -1)
+                sb.append(current);
             else
-                if(current == symbol)
-                    return sb.toString();
-                else if(current == screeningSymbol)
-                    screen = true;
-                else if(service.indexOf(current) == -1)
-                    sb.append(current);
-                else
-                    throw new IllegalArgumentException("Unexpected service symbol at");
+                throw new ParseException("Unexpected service symbol");
+        }
+    }
+
+    private int safeRead(StringReader reader) {
+        try {
+            return reader.read();
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 }
