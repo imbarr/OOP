@@ -1,21 +1,26 @@
 package serializator;
 
 import javafx.util.Pair;
-import org.apache.commons.io.input.CharSequenceInputStream;
 
+import java.io.IOError;
+import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Serializator {
     public static final String preamble = "<serialized>";
-    public static final String service = "()#|";
+    public static final char screeningSymbol = '#';
+    public static final String service = "()|" + screeningSymbol;
 
     public String serialize(Object object) {
-        return preamble + "(" + object.getClass().getSimpleName() + "|" + allFieldsToString(object) + ")";
+        return preamble + object.getClass().getSimpleName() + '(' + allFieldsToString(object) + ')';
     }
 
     private List<Field> getAllFields(Object object) {
@@ -83,6 +88,88 @@ public class Serializator {
     }
 
     public Object deserialize(byte[] raw) {
-        return null;
+        StringReader reader = new StringReader(new String(raw, StandardCharsets.UTF_8));
+
+    }
+
+    private void readFields(StringReader reader, Object object) throws IOException{
+        while (true) {
+            int next = reader.read();
+            if(next == -1)
+                throw new IllegalArgumentException("Unexpected end of stream");
+            if((char)next == '(')
+                readField(reader, object);
+            else if((char)next == ')')
+                return;
+            else
+                throw new IllegalArgumentException("Unexpected character");
+        }
+    }
+
+    private void readField(StringReader reader, Object object) {
+
+    }
+
+    private void setPrimitive(StringReader reader, Field field, Object object) {
+
+    }
+
+    /*private List<String> splitBrackets(String string) {
+        if(!string.contains("(") && !string.contains(")"))
+            return null;
+
+        List<String> result = new ArrayList<>();
+        int depth = 0;
+        int start = 0;
+        boolean screen = false;
+        for(int i = 0; i < string.length(); i++) {
+            char current = string.charAt(i);
+            if(screen)
+                screen = false;
+            if(current == screeningSymbol)
+                screen = true;
+            else if(current == '(')
+                depth++;
+            else if(current == ')') {
+                depth--;
+                if(depth == 0) {
+                    result.add(string.substring(start + 1, i));
+                    start = i + 1;
+                }
+            }
+            else if (depth == 0)
+                throw new IllegalArgumentException();
+        }
+        if(depth != 0)
+            throw new IllegalArgumentException();
+        return result;
+    }*/
+
+    public String readUntil(StringReader string, char symbol) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        boolean screen = false;
+        while (true) {
+            int next = string.read();
+            if(next == -1)
+                throw new IllegalArgumentException("Unexpected end of stream");
+            char current = (char)next;
+
+            if(screen)
+                if(service.indexOf(current) != -1) {
+                    sb.append(current);
+                    screen = false;
+                }
+                else
+                    throw new IllegalArgumentException("Invalid screening");
+            else
+                if(current == symbol)
+                    return sb.toString();
+                else if(current == screeningSymbol)
+                    screen = true;
+                else if(service.indexOf(current) == -1)
+                    sb.append(current);
+                else
+                    throw new IllegalArgumentException("Unexpected service symbol at");
+        }
     }
 }
