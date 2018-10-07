@@ -88,15 +88,17 @@ public class Serializator {
         return sb.toString();
     }
 
-    public Object deserialize(byte[] raw) throws Exception {
-        StringReader reader = new StringReader(new String(raw, StandardCharsets.UTF_8));
-        String start = readUntil(reader, '(');
-        if(!start.startsWith(preamble))
-            throw new IllegalArgumentException("Data does not start with preamble");
-        Object result = Class.forName(usedPackage + "." + start.substring(preamble.length(), start.length()))
-                .getConstructor().newInstance();
-        readFields(reader, result);
-        return result;
+    public Object deserialize(byte[] raw) throws ParseException {
+        return wrapExceptions(() -> {
+            StringReader reader = new StringReader(new String(raw, StandardCharsets.UTF_8));
+            String start = readUntil(reader, '(');
+            if (!start.startsWith(preamble))
+                throw new IllegalArgumentException("Data does not start with preamble");
+            Object result = Class.forName(usedPackage + "." + start.substring(preamble.length(), start.length()))
+                    .getConstructor().newInstance();
+            readFields(reader, result);
+            return result;
+        });
     }
 
     private void readFields(StringReader reader, Object object) throws ParseException {
@@ -114,7 +116,7 @@ public class Serializator {
     }
 
     private void readField(StringReader reader, Object object) throws ParseException {
-        try {
+        wrapExceptions(() -> {
             Field field = object.getClass().getDeclaredField(readUntil(reader, '|'));
             field.setAccessible(true);
             String category = readUntil(reader, '|');
@@ -132,19 +134,8 @@ public class Serializator {
                 }
             } else if (category.equals("p"))
                 setPrimitiveOrSpecial(readUntil(reader, ')'), Types.valueOf(className), field, object);
-        } catch (NoSuchFieldException e) {
-            throw new ParseException("Field not found", e);
-        } catch (ClassNotFoundException e) {
-            throw new ParseException("Class not found", e);
-        } catch (NoSuchMethodException e) {
-            throw new ParseException("Class does not have a constructor without parameters", e);
-        } catch (InvocationTargetException e) {
-            throw new ParseException("Class constructor threw a exception", e);
-        } catch (InstantiationException e) {
-            throw new ParseException("Class is abstract", e);
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException();
-        }
+            return null;
+        });
     }
 
     private void setPrimitiveOrSpecial(String value, Types type, Field field, Object object)
@@ -221,5 +212,34 @@ public class Serializator {
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private <R> R wrapExceptions(CheckedFunction<R> f) throws ParseException {
+        try {
+            return f.run();
+        } catch (NoSuchFieldException e) {
+            throw new ParseException("Field not found", e);
+        } catch (ClassNotFoundException e) {
+            throw new ParseException("Class not found", e);
+        } catch (NoSuchMethodException e) {
+            throw new ParseException("Class does not have a constructor without parameters", e);
+        } catch (InvocationTargetException e) {
+            throw new ParseException("Class constructor threw a exception", e);
+        } catch (InstantiationException e) {
+            throw new ParseException("Class is abstract", e);
+        } catch (IllegalAccessException e) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    @FunctionalInterface
+    public interface CheckedFunction<R> {
+        R run() throws NoSuchFieldException,
+                ClassNotFoundException,
+                NoSuchMethodException,
+                InvocationTargetException,
+                InstantiationException,
+                IllegalAccessException,
+                ParseException;
     }
 }
