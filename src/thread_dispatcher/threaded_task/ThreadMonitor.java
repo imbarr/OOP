@@ -10,9 +10,15 @@ public class ThreadMonitor extends ThreadedTask implements Callback {
     private File output;
     private Set<Thread> threads;
 
+    private volatile boolean cancelled;
+
     public ThreadMonitor(File output, Set<Thread> threads) {
         this.output = output;
         this.threads = threads;
+    }
+
+    public void cancel() {
+        cancelled = true;
     }
 
     private Set<Thread> alive() {
@@ -22,7 +28,7 @@ public class ThreadMonitor extends ThreadedTask implements Callback {
     @Override
     public void start() {
         Set<Thread> copy = alive();
-        while(true) {
+        while(!cancelled) {
             Set<Thread> alive = alive();
             if(!alive.equals(copy)) {
                 refresh();
@@ -36,11 +42,9 @@ public class ThreadMonitor extends ThreadedTask implements Callback {
     }
 
     public void refresh() {
-        try {
-            PrintWriter pw = new PrintWriter(output);
+        try(PrintWriter pw = new PrintWriter(output)) {
             for(Thread t: alive())
                 pw.println(Long.toString(t.getId()) + " " + t.getName());
-            pw.close();
         } catch (IOException ignored) {}
     }
 }

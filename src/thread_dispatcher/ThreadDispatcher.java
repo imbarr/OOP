@@ -22,7 +22,10 @@ public class ThreadDispatcher {
 
     public static ThreadDispatcher getInstance(File logging) {
         if(instance == null)
-            instance = new ThreadDispatcher(logging);
+            synchronized (ThreadDispatcher.class) {
+                if(instance == null)
+                    instance = new ThreadDispatcher(logging);
+            }
         return instance;
     }
 
