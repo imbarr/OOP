@@ -6,7 +6,10 @@ import thread_dispatcher.threaded_task.ThreadedTask;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -27,14 +30,13 @@ public class CommandTask extends ThreadedTask {
 
     @Override
     public void start() {
-        try {
-            byte[] result = readAll(socket.getInputStream());
+        try(Socket s = socket;
+            InputStream is = s.getInputStream();
+            OutputStream out = s.getOutputStream()) {
+            byte[] result = readAll(is);
             if (result == null)
                 return;
-            OutputStream out = socket.getOutputStream();
             out.write(execute(new String(result, StandardCharsets.UTF_8)));
-            out.close();
-            socket.close();
         } catch (IOException ignored) {}
     }
 

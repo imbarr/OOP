@@ -18,8 +18,6 @@ public class Main
                         new File(ini.get("test_directory")));
                 System.out.println("Server started.");
                 server.start();
-            } catch (NoSuchAlgorithmException e) {
-                System.err.println("Fatal: MD5 algorithm is not available.");
             } catch (IOException e) {
                 System.err.println("Fatal: " + e.getMessage() + ".");
             }
