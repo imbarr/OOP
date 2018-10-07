@@ -52,7 +52,7 @@ public class Serializator {
             if (boolean.class.equals(type))
                 return new Pair<>(Types.Boolean, Boolean.toString(field.getBoolean(object)));
             if (String.class.equals(type) && field.get(object) != null)
-                return  new Pair<>(Types.String, screen((String)field.get(object)));
+                return new Pair<>(Types.String, screen((String)field.get(object)));
         } catch (IllegalAccessException ignored) {}
         return null;
     }

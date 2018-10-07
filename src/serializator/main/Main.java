@@ -16,8 +16,8 @@ public class Main {
         try {
             Class1 c1_deserialized = (Class1)s.deserialize(result);
             System.out.println("OK");
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
