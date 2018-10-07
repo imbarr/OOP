@@ -12,19 +12,14 @@ import java.net.Socket;
 
 public class Server {
     private ThreadDispatcher dispatcher;
-    private FileWorker worker;
-    private MD5Execution hashing;
-
     private volatile boolean stopped;
 
     public void stop() {
         stopped = true;
     }
 
-    public Server(File logging, File directory){
+    public Server(File logging){
         dispatcher = ThreadDispatcher.getInstance(logging);
-        hashing = new MD5Execution();
-        worker = new FileWorker(hashing, directory, true);
     }
 
     public void start() throws IOException {

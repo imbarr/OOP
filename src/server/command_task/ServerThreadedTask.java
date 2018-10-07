@@ -2,6 +2,8 @@ package server.command_task;
 
 import server.server_task.ServerTask;
 import thread_dispatcher.threaded_task.ThreadedTask;
+import util.application_protocol.ApplicationProtocolException;
+import util.application_protocol.ProtocolMethods;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,23 +25,10 @@ public class ServerThreadedTask extends ThreadedTask {
         try(Socket s = socket;
             InputStream is = s.getInputStream();
             OutputStream out = s.getOutputStream()) {
-            byte[] result = readAll(is);
+            byte[] result = ProtocolMethods.readAll(is);
             if (result == null)
                 return;
             out.write(task.work(result));
-        } catch (IOException ignored) {}
-    }
-
-    private byte[] readAll(InputStream stream) throws IOException {
-        byte[] rawCount = new byte[2];
-        if(stream.read(rawCount, 0, 2) < 2)
-            return null;
-        ByteBuffer buffer = ByteBuffer.wrap(rawCount);
-        short length = buffer.getShort();
-
-        byte[] result = new byte[length];
-        if(stream.read(result, 0, length) != length)
-            return null;
-        return result;
+        } catch (IOException | ApplicationProtocolException ignored) {}
     }
 }
