@@ -4,15 +4,15 @@ import file_worker.executable.IExecutable;
 import java.io.FileNotFoundException;
 
 public class FileWorker {
-    public static final boolean isRecursiveDefault = false;
+    private static final boolean isRecursiveDefault = false;
 
     private boolean isRecursive;
     private File file;
     private IExecutable command;
 
-    public FileWorker(IExecutable command) {
+    public FileWorker(IExecutable command, File file) {
         this.command = command;
-        file = new File("");
+        this.file = file;
         isRecursive = isRecursiveDefault;
     }
 
@@ -40,7 +40,7 @@ public class FileWorker {
 
     public boolean execute() throws FileNotFoundException {
         if(file.isFile())
-            return execute(file);
+            return command.execute(file);
         if(file.isDirectory())
             return executeDirectory(file);
         throw new FileNotFoundException("File " + file.getPath() + " not found.");
@@ -54,7 +54,10 @@ public class FileWorker {
 
     private boolean executeDirectory(File file) {
         boolean succeed = true;
-        for(File f : file.listFiles())
+        File[] list = file.listFiles();
+        if(list == null)
+            return false;
+        for(File f : list)
             succeed = succeed && execute(f);
         return succeed;
     }
