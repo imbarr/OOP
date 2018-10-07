@@ -2,7 +2,7 @@ package server;
 
 import file_worker.executable.MD5Execution;
 import file_worker.FileWorker;
-import server.command_task.CommandTask;
+import server.command_task.ServerThreadedTask;
 import thread_dispatcher.ThreadDispatcher;
 
 import java.io.File;
@@ -31,7 +31,8 @@ public class Server {
         try(ServerSocket server = new ServerSocket(40000)) {
             while (!stopped) {
                 Socket client = server.accept();
-                dispatcher.add(new CommandTask(client, worker, hashing));
+                //TODO: Write ServerTask
+                dispatcher.add(new ServerThreadedTask(client, null));
             }
         }
     }

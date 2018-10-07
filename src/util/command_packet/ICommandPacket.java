@@ -1,11 +1,11 @@
 package util.command_packet;
 
 import serializator.ParseException;
-import util.command.ICommand;
+import util.command.ICommandSignature;
 
 import java.util.zip.DataFormatException;
 
 public interface ICommandPacket {
-    byte[] serialize(ICommand command);
-    ICommand deserialize(byte[] bytes) throws DataFormatException, ParseException, NotACommandException;
+    byte[] serialize(ICommandSignature command);
+    ICommandSignature deserialize(byte[] bytes) throws DataFormatException, ParseException, NotACommandException;
 }

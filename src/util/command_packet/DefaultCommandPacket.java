@@ -2,7 +2,7 @@ package util.command_packet;
 
 import serializator.ParseException;
 import serializator.Serializator;
-import util.command.ICommand;
+import util.command.ICommandSignature;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,7 +14,7 @@ public class DefaultCommandPacket implements ICommandPacket {
     private Serializator serializator = new Serializator();
 
     @Override
-    public byte[] serialize(ICommand command) {
+    public byte[] serialize(ICommandSignature command) {
         byte[] serialized = serializator.serialize(command);
 
         Deflater compressor = new Deflater();
@@ -35,7 +35,7 @@ public class DefaultCommandPacket implements ICommandPacket {
     }
 
     @Override
-    public ICommand deserialize(byte[] bytes) throws DataFormatException, ParseException, NotACommandException {
+    public ICommandSignature deserialize(byte[] bytes) throws DataFormatException, ParseException, NotACommandException {
         Inflater decompresser = new Inflater();
         decompresser.setInput(bytes);
 
@@ -46,8 +46,8 @@ public class DefaultCommandPacket implements ICommandPacket {
                 os.write(buf, 0, count);
             }
             Object obj = serializator.deserialize(os.toByteArray());
-            if(obj instanceof ICommand)
-                return (ICommand) obj;
+            if(obj instanceof ICommandSignature)
+                return (ICommandSignature) obj;
             throw new NotACommandException();
         } catch (IOException e) {
             throw new IllegalArgumentException();

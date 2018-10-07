@@ -9,11 +9,11 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
-public class CommandTask extends ThreadedTask {
+public class ServerThreadedTask extends ThreadedTask {
     private Socket socket;
     private ServerTask task;
 
-    public CommandTask(Socket socket, ServerTask task) {
+    public ServerThreadedTask(Socket socket, ServerTask task) {
         this.socket = socket;
         this.task = task;
     }
