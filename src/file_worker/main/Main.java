@@ -24,7 +24,7 @@ public class Main
                 System.out.println(res);
                 Byte[] a = md5.getHash(new File(ini.get("test_directory") + "/folder1"));
                 System.out.println(Hex.encodeHexString(ArrayUtils.toPrimitive(a)));
-            } catch (IOException | NoSuchAlgorithmException e) {
+            } catch (IOException e) {
                 System.err.println(e.getMessage());
             }
         }

@@ -1,7 +1,7 @@
-package util.command_packet;
+package git_server.server_task;
 
 public class NotACommandException extends Exception {
     public NotACommandException() {
-        super("Class is not a subclass of ICommandSignature");
+        super("Class is not a subclass of IProcedure");
     }
 }

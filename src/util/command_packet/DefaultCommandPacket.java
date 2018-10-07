@@ -2,7 +2,7 @@ package util.command_packet;
 
 import serializator.ParseException;
 import serializator.Serializator;
-import util.command.ICommandSignature;
+import util.procedure.IProcedure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,8 +14,8 @@ public class DefaultCommandPacket implements ICommandPacket {
     private Serializator serializator = new Serializator();
 
     @Override
-    public byte[] serialize(ICommandSignature command) {
-        byte[] serialized = serializator.serialize(command);
+    public byte[] serialize(Object o) {
+        byte[] serialized = serializator.serialize(o);
 
         Deflater compressor = new Deflater();
         compressor.setLevel(Deflater.BEST_COMPRESSION);
@@ -35,22 +35,25 @@ public class DefaultCommandPacket implements ICommandPacket {
     }
 
     @Override
-    public ICommandSignature deserialize(byte[] bytes) throws DataFormatException, ParseException, NotACommandException {
-        Inflater decompresser = new Inflater();
-        decompresser.setInput(bytes);
+    public Object deserialize(byte[] bytes) throws CommandPacketException {
+        try {
+            Inflater decompresser = new Inflater();
+            decompresser.setInput(bytes);
 
-        byte[] buf = new byte[1024];
-        try(ByteArrayOutputStream os = new ByteArrayOutputStream(bytes.length)) {
-            while (!decompresser.finished()) {
-                int count = decompresser.inflate(buf);
-                os.write(buf, 0, count);
+            byte[] buf = new byte[1024];
+            try (ByteArrayOutputStream os = new ByteArrayOutputStream(bytes.length)) {
+                while (!decompresser.finished()) {
+                    int count = decompresser.inflate(buf);
+                    os.write(buf, 0, count);
+                }
+                return serializator.deserialize(os.toByteArray());
+            } catch (IOException e) {
+                throw new IllegalArgumentException();
             }
-            Object obj = serializator.deserialize(os.toByteArray());
-            if(obj instanceof ICommandSignature)
-                return (ICommandSignature) obj;
-            throw new NotACommandException();
-        } catch (IOException e) {
-            throw new IllegalArgumentException();
+        } catch (DataFormatException e) {
+            throw new CommandPacketException("Invalid compression");
+        } catch (ParseException e) {
+            throw new CommandPacketException("Invalid serialization");
         }
     }
 }
