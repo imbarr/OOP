@@ -3,6 +3,7 @@ package git_client.command_factory;
 import git_client.command.*;
 
 import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Function;
@@ -17,7 +18,11 @@ public class CommandFactory implements ICommandFactory {
         switch (list[0].toLowerCase()) {
             case "add":
                 checkArgs(list, i -> i == 2);
-                return new Add(list[2]);
+                try {
+                    return new Add(Paths.get(list[2]));
+                } catch (InvalidPathException e) {
+                    throw new SyntaxException("Invalid path or name");
+                }
             case "clone":
                 checkArgs(list, i -> i >= 3);
                 boolean addDir = true;

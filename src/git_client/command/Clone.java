@@ -1,5 +1,9 @@
 package git_client.command;
 
+import git_client.local_repository.ILocalRepository;
+import util.procedure.GetLatest;
+import util.procedure.IProcedure;
+
 import java.nio.file.Path;
 
 public class Clone implements ICommand {
@@ -11,5 +15,10 @@ public class Clone implements ICommand {
         this.path = path;
         this.repoName = name;
         this.addDirectory = addDirectory;
+    }
+
+    @Override
+    public IProcedure toProcedure(ILocalRepository local) {
+        return new GetLatest(repoName);
     }
 }
