@@ -6,7 +6,7 @@ import util.procedure.IProcedure;
 
 import java.nio.file.Path;
 
-public class Clone implements ICommand {
+public class Clone extends NetCommand {
     public final Path path;
     public final Path repoName;
     public final boolean addDirectory;

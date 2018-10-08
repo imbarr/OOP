@@ -6,7 +6,7 @@ import util.procedure.IProcedure;
 
 import java.nio.file.Path;
 
-public class Add implements ICommand {
+public class Add extends NetCommand {
     public final Path name;
 
     public Add(Path name) {

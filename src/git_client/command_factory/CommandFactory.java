@@ -18,11 +18,7 @@ public class CommandFactory implements ICommandFactory {
         switch (list[0].toLowerCase()) {
             case "add":
                 checkArgs(list, i -> i == 2);
-                try {
-                    return new Add(Paths.get(list[2]));
-                } catch (InvalidPathException e) {
-                    throw new SyntaxException("Invalid path or name");
-                }
+                return new Add(toPath(list[2]));
             case "clone":
                 checkArgs(list, i -> i >= 3);
                 boolean addDir = true;
@@ -30,11 +26,7 @@ public class CommandFactory implements ICommandFactory {
                     addDir = false;
                 else if (list.length != 3)
                     throw new SyntaxException("Wrong flags");
-                try {
-                    return new Clone(Paths.get(list[1]), Paths.get(list[2]), addDir);
-                } catch (InvalidPathException e) {
-                    throw new SyntaxException("Invalid path or name");
-                }
+                return new Clone(toPath(list[1]), toPath(list[2]), addDir);
             case "update":
                 checkArgs(list, i -> i == 1);
                 return new Update();
@@ -52,6 +44,9 @@ public class CommandFactory implements ICommandFactory {
             case "log":
                 checkArgs(list, i -> i == 1);
                 return new Log();
+            case "changedir":
+                checkArgs(list, i -> i == 2);
+                return new ChangeDir(toPath(list[1]));
         }
         throw new SyntaxException("Command not found");
     }
@@ -66,5 +61,13 @@ public class CommandFactory implements ICommandFactory {
     private void checkArgs(String[] list, Function<Integer, Boolean> check) throws SyntaxException {
         if(!check.apply(list.length))
             throw new SyntaxException("Wrong number of arguments");
+    }
+
+    private Path toPath(String s) throws SyntaxException {
+        try {
+            return Paths.get(s);
+        } catch (InvalidPathException e) {
+            throw new SyntaxException("Invalid path");
+        }
     }
 }
