@@ -1,4 +1,4 @@
-package client.command;
+package git_client.command;
 
 public class Revert implements ICommand {
     public final String version;

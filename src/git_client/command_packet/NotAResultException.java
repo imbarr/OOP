@@ -1,4 +1,4 @@
-package client.command_packet;
+package git_client.command_packet;
 
 public class NotAResultException extends Exception {
     public NotAResultException(String msg) {

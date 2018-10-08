@@ -1,4 +1,4 @@
-package client.command;
+package git_client.command;
 
 public class Add implements ICommand {
     public final String name;

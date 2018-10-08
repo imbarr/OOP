@@ -1,6 +1,6 @@
-package client.command_factory;
+package git_client.command_factory;
 
-import client.command.*;
+import git_client.command.*;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;

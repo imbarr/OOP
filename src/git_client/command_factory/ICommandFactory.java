@@ -1,6 +1,6 @@
-package client.command_factory;
+package git_client.command_factory;
 
-import client.command.ICommand;
+import git_client.command.ICommand;
 
 public interface ICommandFactory {
     ICommand parse(String input) throws SyntaxException;

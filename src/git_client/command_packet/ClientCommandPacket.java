@@ -1,4 +1,4 @@
-package client.command_packet;
+package git_client.command_packet;
 
 import util.command_packet.CommandPacketException;
 import util.command_packet.ICommandPacket;

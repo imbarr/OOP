@@ -1,4 +1,4 @@
-package client.command;
+package git_client.command;
 
 import java.nio.file.Path;
 
