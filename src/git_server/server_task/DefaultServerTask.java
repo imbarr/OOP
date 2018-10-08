@@ -7,7 +7,8 @@ import util.command_packet.DefaultCommandPacket;
 import util.procedure.Result;
 
 public class DefaultServerTask extends ServerTask {
-    private ServerCommandPacket packet = new ServerCommandPacket(new DefaultCommandPacket());
+    private ServerCommandPacket packet = new ServerCommandPacket(
+            new DefaultCommandPacket("git_server.procedure"));
 
     @Override
     public byte[] work(byte[] input) {

@@ -10,7 +10,7 @@ public class Main {
         Class1 c1 = new Class1();
         c1.str = "abc#()gfhfghf123||";
         c1.class1 = new Class1();
-        Serializator s = new Serializator();
+        Serializator s = new Serializator("serializator.test_classes");
         byte[] result = s.serialize(c1);
         System.out.println(new String(result, StandardCharsets.UTF_8));
         try {

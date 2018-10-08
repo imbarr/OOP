@@ -11,7 +11,11 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public class DefaultCommandPacket implements ICommandPacket {
-    private Serializator serializator = new Serializator();
+    private Serializator serializator;
+
+    public DefaultCommandPacket(String usedPackage) {
+        this.serializator = new Serializator(usedPackage);
+    }
 
     @Override
     public byte[] serialize(Object o) {

@@ -1,5 +1,6 @@
 package serializator;
 import javafx.util.Pair;
+import server.Server;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -13,7 +14,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Serializator {
-    public static final String usedPackage = "serializator.test_classes";
+    public Serializator(String usedPackage) {
+        this.usedPackage = usedPackage;
+    }
+
+    public final String usedPackage;
 
     public static final String preamble = "<serialized>";
     public static final char screeningSymbol = '#';
