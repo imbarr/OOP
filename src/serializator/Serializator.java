@@ -1,9 +1,9 @@
 package serializator;
 import javafx.util.Pair;
-import server.Server;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -11,6 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Serializator {
@@ -22,7 +25,7 @@ public class Serializator {
 
     public static final String preamble = "<serialized>";
     public static final char screeningSymbol = '#';
-    public static final String service = "()|" + screeningSymbol;
+    public static final String service = "()|," + screeningSymbol;
 
     public byte[] serialize(Object object) {
         return (preamble + object.getClass().getSimpleName() + '(' + allFieldsToString(object) + ')')
@@ -35,6 +38,42 @@ public class Serializator {
             fields.addAll(Arrays.asList(c.getDeclaredFields()));
         }
         return fields;
+    }
+
+    private Pair<Types, String> fromArray(Field field, Object object) {
+        if(!field.getType().isArray())
+            return null;
+        int length = Array.getLength(object);
+        Pair<Types, Function<Integer, String>> pair = getTypeAndGetter(field, object);
+        Function<Integer, String> toString = pair.getValue();
+        StringBuilder result = new StringBuilder();
+        for(int i = 0; i < length; i++) {
+            result.append(toString.apply(i)).append(",");
+        }
+        return new Pair<>(pair.getKey(), result.toString());
+    }
+
+    private Pair<Types, Function<Integer, String>> getTypeAndGetter(Field field, Object array) {
+        Class<?> type = field.getType().getComponentType();
+        if(byte.class.equals(type))
+            return new Pair<>(Types.Byte, i -> Byte.toString(Array.getByte(array, i)));
+        if(short.class.equals(type))
+            return new Pair<>(Types.Short, i -> Short.toString(Array.getShort(array, i)));
+        if(int.class.equals(type))
+            return new Pair<>(Types.Integer, i -> Integer.toString(Array.getInt(array, i)));
+        if(long.class.equals(type))
+            return new Pair<>(Types.Long, i -> Long.toString(Array.getLong(array, i)));
+        if(float.class.equals(type))
+            return new Pair<>(Types.Float, i -> Float.toString(Array.getFloat(array, i)));
+        if(double.class.equals(type))
+            return new Pair<>(Types.Double, i -> Double.toString(Array.getDouble(array, i)));
+        if(char.class.equals(type))
+            return new Pair<>(Types.Character, i -> Character.toString(Array.getChar(array, i)));
+        if(boolean.class.equals(type))
+            return new Pair<>(Types.Boolean, i -> Boolean.toString(Array.getBoolean(array, i)));
+        return new Pair<>(null, i ->
+                "(" + Array.get(array, i).getClass().getSimpleName() +
+                        "|" + allFieldsToString(Array.get(array, i)) + ")");
     }
 
     private Pair<Types, String> fromPrimitiveOrSpecial(Field field, Object object){
@@ -69,9 +108,18 @@ public class Serializator {
             return "(" + field.getName() + "|p|" + special.getKey() + "|" + special.getValue() + ")";
         try {
             Object next = field.get(object);
-            if(next != null)
+            if(next != null) {
+                Pair<Types, String> array = fromArray(field, next);
+                if (array != null)
+                    return "(" + field.getName() + (array.getKey() == null ? "|a|" : "|pa|")
+                            + Array.getLength(next) + "|" +
+                            (array.getKey() == null
+                                    ? field.getType().getComponentType().getSimpleName()
+                                    : array.getKey()) +
+                            "|" + array.getValue() + ")";
                 return "(" + field.getName() + "|o|" + field.getDeclaringClass().getSimpleName() + "|" +
-                    allFieldsToString(next) + ")";
+                        allFieldsToString(next) + ")";
+            }
         } catch (IllegalAccessException ignored) {}
         return "";
     }
@@ -96,7 +144,7 @@ public class Serializator {
     public Object deserialize(byte[] raw) throws ParseException {
         return wrapExceptions(() -> {
             StringReader reader = new StringReader(new String(raw, StandardCharsets.UTF_8));
-            String start = readUntil(reader, '(');
+            String start = readUntil(reader, "(");
             if (!start.startsWith(preamble))
                 throw new IllegalArgumentException("Data does not start with preamble");
             Object result = Class.forName(usedPackage + "." + start.substring(preamble.length(), start.length()))
@@ -110,24 +158,24 @@ public class Serializator {
         while (true) {
             int next = safeRead(reader);
             if(next == -1)
-                throw new IllegalArgumentException("Unexpected end of stream");
+                throw new ParseException("Unexpected end of stream");
             if((char)next == '(')
                 readField(reader, object);
             else if((char)next == ')')
                 return;
             else
-                throw new IllegalArgumentException("Unexpected character");
+                throw new ParseException("Unexpected character");
         }
     }
 
     private void readField(StringReader reader, Object object) throws ParseException {
         wrapExceptions(() -> {
-            Field field = object.getClass().getDeclaredField(readUntil(reader, '|'));
+            Field field = object.getClass().getField(readUntil(reader, "|"));
             field.setAccessible(true);
-            String category = readUntil(reader, '|');
-            String className = readUntil(reader, '|');
+            String category = readUntil(reader, "|");
 
             if (category.equals("o")) {
+                String className = readUntil(reader, "|");
                 Constructor<?> constructor = Class.forName(usedPackage + "." + className).getConstructor();
                 constructor.setAccessible(true);
                 Object n = constructor.newInstance();
@@ -137,9 +185,70 @@ public class Serializator {
                 } catch (IllegalArgumentException e) {
                     throw new ParseException("Field has a different type", e);
                 }
-            } else if (category.equals("p"))
-                setPrimitiveOrSpecial(readUntil(reader, ')'), Types.valueOf(className), field, object);
+            } else if (category.equals("p")) {
+                String className = readUntil(reader, "|");
+                setPrimitiveOrSpecial(readUntil(reader, ")"), Types.valueOf(className), field, object);
+            } else if (category.equals("a") || category.equals("pa")) {
+                int length;
+                try {
+                    length = Integer.parseInt(readUntil(reader, "|"));
+                } catch (NumberFormatException e) {
+                    throw new ParseException("Invalid array length.");
+                }
+                String className = readUntil(reader, "|");
+                Object array = Array.newInstance(Class.forName(usedPackage + "." + className), length);
+                readElements(reader, array, category.equals("pa") ? Types.valueOf(className) : null, length);
+            }
             return null;
+        });
+    }
+
+    private void readElements(StringReader reader, Object array, Types type, int length) throws ParseException {
+        try {
+            for(int i = 0; i < length; i++)
+                if (type == null) {
+                    Array.set(array, i, readObjectInArray(reader));
+                    safeRead(reader);
+                }
+                else if (type == Types.Byte)
+                        Array.setByte(array, i, Byte.valueOf(readUntil(reader, ",)")));
+                else if (type == Types.Short)
+                        Array.setShort(array, i, Short.valueOf(readUntil(reader, ",)")));
+                else if (type == Types.Integer)
+                        Array.setInt(array, i, Integer.valueOf(readUntil(reader, ",)")));
+                else if (type == Types.Long)
+                        Array.setLong(array, i, Long.valueOf(readUntil(reader, ",)")));
+                else if (type == Types.Float)
+                        Array.setFloat(array, i, Float.valueOf(readUntil(reader, ",)")));
+                else if (type == Types.Double)
+                        Array.setDouble(array, i, Double.valueOf(readUntil(reader, ",)")));
+                else if (type == Types.Character)
+                        Array.setChar(array, i, charValueOf(readUntil(reader, ",)")));
+                else if (type == Types.Boolean)
+                        Array.setBoolean(array, i, booleanValueOf(readUntil(reader, ",)")));
+                else if (type == Types.String)
+                        Array.set(array, i, readUntil(reader, ",)"));
+        } catch (NumberFormatException e) {
+            throw new ParseException("Failed parsing to " + type.toString(), e);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException("Field has a different type", e);
+        }
+    }
+
+    private Object readObjectInArray(StringReader reader) throws ParseException {
+        return wrapExceptions(() -> {
+            int c = safeRead(reader);
+            if (c == -1)
+                throw new ParseException("Unexpected end of stream");
+            if (c != '(')
+                throw new ParseException("Not a object");
+            Constructor<?> constructor = Class
+                    .forName(usedPackage + "." + readUntil(reader, "|"))
+                    .getConstructor();
+            constructor.setAccessible(true);
+            Object object = constructor.newInstance();
+            readFields(reader, object);
+            return object;
         });
     }
 
@@ -185,7 +294,7 @@ public class Serializator {
         throw new NumberFormatException();
     }
 
-    private String readUntil(StringReader reader, char symbol) throws ParseException {
+    private String readUntil(StringReader reader, String symbols) throws ParseException {
         StringBuilder sb = new StringBuilder();
         boolean screen = false;
         while (true) {
@@ -200,7 +309,7 @@ public class Serializator {
                     screen = false;
                 } else
                     throw new ParseException("Invalid screening");
-            else if (current == symbol)
+            else if (symbols.indexOf(current) != -1)
                 return sb.toString();
             else if (current == screeningSymbol)
                 screen = true;
@@ -223,7 +332,7 @@ public class Serializator {
         try {
             return f.run();
         } catch (NoSuchFieldException e) {
-            throw new ParseException("Field not found", e);
+            throw new ParseException("Field not found: " + e.getMessage(), e);
         } catch (ClassNotFoundException e) {
             throw new ParseException("Class not found", e);
         } catch (NoSuchMethodException e) {
