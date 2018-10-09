@@ -1,4 +1,4 @@
-package util.procedure;
+package util.result;
 
 public class Result {
     private int error;

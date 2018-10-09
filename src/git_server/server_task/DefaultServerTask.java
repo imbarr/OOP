@@ -4,7 +4,7 @@ import server.server_task.ServerTask;
 import util.command_packet.CommandPacketException;
 import util.command_packet.DefaultCommandPacket;
 import util.procedure.IProcedure;
-import util.procedure.Result;
+import util.result.Result;
 
 public class DefaultServerTask extends ServerTask {
     private ServerCommandPacket packet = new ServerCommandPacket(

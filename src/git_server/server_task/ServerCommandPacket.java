@@ -3,7 +3,7 @@ package git_server.server_task;
 import util.command_packet.CommandPacketException;
 import util.command_packet.ICommandPacket;
 import util.procedure.IProcedure;
-import util.procedure.Result;
+import util.result.Result;
 
 public class ServerCommandPacket {
     ICommandPacket packet;
