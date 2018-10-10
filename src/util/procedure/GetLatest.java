@@ -3,9 +3,9 @@ package util.procedure;
 import java.nio.file.Path;
 
 public class GetLatest implements IProcedure {
-    public final Path repo;
+    public final String repo;
 
-    public GetLatest(Path repo) {
+    public GetLatest(String repo) {
         this.repo = repo;
     }
 }

@@ -2,18 +2,24 @@ package util.result;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 public class LogResult extends Result {
-    public final Date date;
-    public final String version;
-    public final InetAddress ip;
-    public final Path[] files;
+    public final LogUnit[] commits;
 
-    public LogResult(Date date, String version, InetAddress ip, Path[] files) {
-        this.date = date;
-        this.version = version;
-        this.ip = ip;
-        this.files = files;
+    public LogResult(LogUnit[] commits) {
+        this.commits = commits;
+    }
+
+    @Override
+    public String toString() {
+        return commits.length == 0
+                ? "OK: No commits"
+                : "OK:\n" + Arrays.stream(commits)
+                    .map(u -> u.version + " " + u.date.toString() + " " +
+                            u.ip.toString() + "\n" + String.join("\n", u.files))
+                    .collect(Collectors.joining("\n"));
     }
 }

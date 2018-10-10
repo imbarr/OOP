@@ -26,7 +26,7 @@ public class CommandFactory implements ICommandFactory {
                     addDir = false;
                 else if (list.length != 3)
                     throw new SyntaxException("Wrong flags");
-                return new Clone(toPath(list[1]), toPath(list[2]), addDir);
+                return new Clone(toPath(list[1]), list[2], addDir);
             case "update":
                 checkArgs(list, i -> i == 1);
                 return new Update();

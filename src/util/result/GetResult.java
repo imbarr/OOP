@@ -1,12 +1,11 @@
 package util.result;
 
-import java.nio.file.Path;
-import java.util.Map;
+import util.procedure.FileContent;
 
 public class GetResult extends Result {
-    public final Map<Path, String> files;
+    public final FileContent[] files;
 
-    public GetResult(Map<Path, String> files) {
+    public GetResult(FileContent[] files) {
         super();
         this.files =files;
     }

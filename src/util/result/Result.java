@@ -1,8 +1,8 @@
 package util.result;
 
 public class Result {
-    private int error;
-    private String info;
+    public int error;
+    public String info;
 
     public Result() {
         error = 0;
@@ -12,5 +12,12 @@ public class Result {
     public Result(int error, String info) {
         this.error = error;
         this.info = info;
+    }
+
+    @Override
+    public String toString() {
+        return error == 0
+                ? "OK: " + info
+                : "Error code " + error + ": " + info;
     }
 }

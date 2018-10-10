@@ -146,7 +146,7 @@ public class Serializator {
             StringReader reader = new StringReader(new String(raw, StandardCharsets.UTF_8));
             String start = readUntil(reader, "(");
             if (!start.startsWith(preamble))
-                throw new IllegalArgumentException("Data does not start with preamble");
+                throw new ParseException("Data does not start with preamble");
             Object result = Class.forName(usedPackage + "." + start.substring(preamble.length(), start.length()))
                     .getConstructor().newInstance();
             readFields(reader, result);
@@ -198,6 +198,7 @@ public class Serializator {
                 String className = readUntil(reader, "|");
                 Object array = Array.newInstance(Class.forName(usedPackage + "." + className), length);
                 readElements(reader, array, category.equals("pa") ? Types.valueOf(className) : null, length);
+                field.set(object, array);
             }
             return null;
         });
