@@ -14,9 +14,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 public class Add extends NetCommand {
-    public final Path name;
+    public final String name;
 
-    public Add(Client client, ClientCommandPacket packet, Path name) {
+    public Add(Client client, ClientCommandPacket packet, String name) {
         super(client, packet);
         this.name = name;
     }

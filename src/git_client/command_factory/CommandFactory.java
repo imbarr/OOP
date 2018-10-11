@@ -1,6 +1,10 @@
 package git_client.command_factory;
 
+import client.Client;
 import git_client.command.*;
+import git_client.command_packet.ClientCommandPacket;
+import git_client.local_repository.ILocalRepository;
+import util.command_packet.ICommandPacket;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -9,6 +13,16 @@ import java.util.Arrays;
 import java.util.function.Function;
 
 public class CommandFactory implements ICommandFactory {
+    public final Client client;
+    public final ClientCommandPacket packet;
+    public final ILocalRepository local;
+
+    public CommandFactory(Client client, ClientCommandPacket packet, ILocalRepository local) {
+        this.local = local;
+        this.client = client;
+        this.packet = packet;
+    }
+
     @Override
     public ICommand parse(String input) throws SyntaxException {
         String[] list = split(input);
@@ -18,7 +32,7 @@ public class CommandFactory implements ICommandFactory {
         switch (list[0].toLowerCase()) {
             case "add":
                 checkArgs(list, i -> i == 2);
-                return new Add(toPath(list[2]));
+                return new Add(client, packet, list[2]);
             case "clone":
                 checkArgs(list, i -> i >= 3);
                 boolean addDir = true;
@@ -26,13 +40,14 @@ public class CommandFactory implements ICommandFactory {
                     addDir = false;
                 else if (list.length != 3)
                     throw new SyntaxException("Wrong flags");
-                return new Clone(toPath(list[1]), list[2], addDir);
+                return new Clone(local, client, packet,
+                        toPath(list[1]), list[2], addDir);
             case "update":
                 checkArgs(list, i -> i == 1);
-                return new Update();
+                return new Update(client, packet, local);
             case "commit":
                 checkArgs(list, i -> i == 1);
-                return new Commit();
+                return new Commit(client, packet, local);
             case "revert":
                 checkArgs(list, i -> i >= 2);
                 boolean hard = false;
@@ -40,13 +55,13 @@ public class CommandFactory implements ICommandFactory {
                     hard = true;
                 else if(list.length != 2)
                     throw new SyntaxException("Wrong flags");
-                return new Revert(list[1], hard);
+                return new Revert(client, packet, local, list[1], hard);
             case "log":
                 checkArgs(list, i -> i == 1);
-                return new Log();
+                return new Log(client, packet, local);
             case "changedir":
                 checkArgs(list, i -> i == 2);
-                return new ChangeDir(toPath(list[1]));
+                return new ChangeDir(local, list[1]);
         }
         throw new SyntaxException("Command not found");
     }
