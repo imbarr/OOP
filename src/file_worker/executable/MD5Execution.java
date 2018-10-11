@@ -16,7 +16,7 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class MD5Execution implements IExecutable {
-    private HashMap<File, Byte[]> hashes;
+    public HashMap<File, Byte[]> hashes;
     private MessageDigest md;
 
     public MD5Execution() {

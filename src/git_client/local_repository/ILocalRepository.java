@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public interface ILocalRepository {
-    void changeDirectory(Path directory);
+    void changeDirectory(Path directory) throws IOException;
 
     void createHere(String name) throws IOException;
 
@@ -16,4 +16,6 @@ public interface ILocalRepository {
     String getRepoName() throws IOException;
 
     FileContent[] getChanges() throws IOException;
+
+    void refreshHashes() throws IOException;
 }

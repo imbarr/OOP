@@ -82,7 +82,7 @@ public class CommandFactory implements ICommandFactory {
         try {
             return Paths.get(s);
         } catch (InvalidPathException e) {
-            throw new SyntaxException("Invalid path");
+            throw new SyntaxException("Invalid dir");
         }
     }
 }
