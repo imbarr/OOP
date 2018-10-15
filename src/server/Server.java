@@ -20,7 +20,7 @@ public class Server {
         stopped = true;
     }
 
-    public Server(File logging, ServerTask task){
+    public Server(File logging, ServerTask task) {
         dispatcher = ThreadDispatcher.getInstance(logging);
         this.task = task;
     }
