@@ -2,6 +2,7 @@ package file_worker.executable;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import util.MD5;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,16 +17,12 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class MD5Execution implements IExecutable {
-    private HashMap<File, Byte[]> hashes;
-    private MessageDigest md;
+    public final HashMap<File, Byte[]> hashes;
+    public final MD5 md5;
 
     public MD5Execution() {
         hashes = new HashMap<>();
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException();
-        }
+        md5 = new MD5();
     }
 
     public Byte[] getHash(File file) throws IOException {
@@ -38,7 +35,7 @@ public class MD5Execution implements IExecutable {
                 if(hash != null)
                     bytes.addAll(Arrays.asList(hash));
             }
-            Byte[] result = ArrayUtils.toObject(md.digest(ArrayUtils.toPrimitive(bytes.toArray(new Byte[0]))));
+            Byte[] result =md5.get(bytes.toArray(new Byte[0]));
             hashes.put(file, result);
             return result;
         }
@@ -48,7 +45,7 @@ public class MD5Execution implements IExecutable {
     public boolean execute(File file) {
         try(FileInputStream fis = new FileInputStream(file)) {
             byte[] result = IOUtils.toByteArray(fis);
-            hashes.put(file, ArrayUtils.toObject(md.digest(result)));
+            hashes.put(file, md5.get(result));
             return true;
         }
         catch(IOException e) {

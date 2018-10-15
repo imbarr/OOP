@@ -8,5 +8,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="apache-commons" level="application" />
+    <orderEntry type="library" exported="" name="commons-codec_windows" level="project" />
+    <orderEntry type="library" exported="" name="commons-io_windows" level="project" />
+    <orderEntry type="library" exported="" name="commons-lang3_windows" level="project" />
   </component>
 </module>
