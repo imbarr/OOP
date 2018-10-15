@@ -26,7 +26,7 @@ public class Server {
     }
 
     public void start() throws IOException {
-        try(ServerSocket server = new ServerSocket(40000)) {
+        try(ServerSocket server = new ServerSocket(9999)) {
             while (!stopped) {
                 Socket client = server.accept();
                 dispatcher.add(new ServerThreadedTask(client, task));

@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class Main {
-    public void main(String[] args) {
+    public static void main(String[] args) {
         Serializator serializator;
 
         ILocalRepository local;

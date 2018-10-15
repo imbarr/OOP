@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 
 public class Main {
-    public void main(String[] args) {
+    public static void main(String[] args) {
         ServerTask task = new DefaultServerTask();
         Server server = new Server(Paths.get("./log.txt").toFile(), task);
         try {
