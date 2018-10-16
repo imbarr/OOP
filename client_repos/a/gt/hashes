@@ -1,6 +1,0 @@
-#Tue Oct 16 22:40:25 YEKT 2018
-a1.length=0
-mainObjectID=o1
-a1.className=git_client.local_repository.HashPair
-o1.className=git_client.local_repository.Hashes
-o1.f.hashes=a1
