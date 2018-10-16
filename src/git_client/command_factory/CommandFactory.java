@@ -59,7 +59,7 @@ public class CommandFactory implements ICommandFactory {
             case "log":
                 checkArgs(list, i -> i == 1);
                 return new Log(client, packet, local);
-            case "changedir":
+            case "cd":
                 checkArgs(list, i -> i == 2);
                 return new ChangeDir(local, list[1]);
         }

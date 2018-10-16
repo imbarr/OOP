@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 
 public class Main {
     public static void main(String[] args) {
-        Serializator s = new Serializator("util.procedure");
+        Serializator s = new Serializator();
         byte[] result = s.serialize(new Byte[0]);
         System.out.println(new String(result, StandardCharsets.UTF_8));
         try {

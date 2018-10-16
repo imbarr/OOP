@@ -24,6 +24,7 @@ public class Commit extends NetCommand {
             CommandPacketException,
             NotAResultException {
         Result r = send(new util.serializable.Commit(local.getRepoName(), local.getChanges()));
+        local.refreshHashes();
         return r.toString();
     }
 }

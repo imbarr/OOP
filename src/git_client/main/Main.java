@@ -25,7 +25,7 @@ public class Main {
         ClientCommandPacket packet;
         ICommandFactory factory;
         try {
-            serializator = new Serializator("git_client.local_repository");
+            serializator = new Serializator();
             //TODO: Исправить!!!
             local = new LocalRepository(serializator, Paths.get("C:\\Users\\Ilya\\IdeaProjects\\OOP\\client_repos"));
             client = new Client(InetAddress.getLocalHost(), 9999);

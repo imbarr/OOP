@@ -1,361 +1,349 @@
 package serializator;
-import javafx.util.Pair;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
-public class Serializator {
-    public Serializator(String usedPackage) {
-        this.usedPackage = usedPackage;
-    }
-
-    public final String usedPackage;
-
-    public static final String preamble = "<serialized>";
-    public static final char screeningSymbol = '#';
-    public static final String service = "()|," + screeningSymbol;
+public class Serializator
+{
 
     public byte[] serialize(Object object) {
-        return (preamble + object.getClass().getSimpleName() + '(' + allFieldsToString(object) + ')')
-                .getBytes(StandardCharsets.UTF_8);
-    }
-
-    private List<Field> getAllFields(Object object) {
-        List<Field> fields = new ArrayList<>();
-        for (Class<?> c = object.getClass(); c != null; c = c.getSuperclass()) {
-            fields.addAll(Arrays.asList(c.getDeclaredFields()));
-        }
-        return fields;
-    }
-
-    private Pair<Types, String> fromArray(Field field, Object object) {
-        if(!field.getType().isArray())
-            return null;
-        int length = Array.getLength(object);
-        Pair<Types, Function<Integer, String>> pair = getTypeAndGetter(field, object);
-        Function<Integer, String> toString = pair.getValue();
-        StringBuilder result = new StringBuilder();
-        for(int i = 0; i < length; i++) {
-            result.append(toString.apply(i)).append(",");
-        }
-        return new Pair<>(pair.getKey(), result.toString());
-    }
-
-    private Pair<Types, Function<Integer, String>> getTypeAndGetter(Field field, Object array) {
-        Class<?> type = field.getType().getComponentType();
-        if(byte.class.equals(type))
-            return new Pair<>(Types.Byte, i -> Byte.toString(Array.getByte(array, i)));
-        if(short.class.equals(type))
-            return new Pair<>(Types.Short, i -> Short.toString(Array.getShort(array, i)));
-        if(int.class.equals(type))
-            return new Pair<>(Types.Integer, i -> Integer.toString(Array.getInt(array, i)));
-        if(long.class.equals(type))
-            return new Pair<>(Types.Long, i -> Long.toString(Array.getLong(array, i)));
-        if(float.class.equals(type))
-            return new Pair<>(Types.Float, i -> Float.toString(Array.getFloat(array, i)));
-        if(double.class.equals(type))
-            return new Pair<>(Types.Double, i -> Double.toString(Array.getDouble(array, i)));
-        if(char.class.equals(type))
-            return new Pair<>(Types.Character, i -> Character.toString(Array.getChar(array, i)));
-        if(boolean.class.equals(type))
-            return new Pair<>(Types.Boolean, i -> Boolean.toString(Array.getBoolean(array, i)));
-        return new Pair<>(null, i ->
-                "(" + Array.get(array, i).getClass().getSimpleName() +
-                        "|" + allFieldsToString(Array.get(array, i)) + ")");
-    }
-
-    private Pair<Types, String> fromPrimitiveOrSpecial(Field field, Object object){
+        Properties properties = classToProperties(object);
         try {
-            Class<?> type = field.getType();
-            if (byte.class.equals(type))
-                return new Pair<>(Types.Byte, Byte.toString(field.getByte(object)));
-            if (short.class.equals(type))
-                return new Pair<>(Types.Short, Short.toString(field.getShort(object)));
-            if (int.class.equals(type))
-                return new Pair<>(Types.Integer, Integer.toString(field.getInt(object)));
-            if (long.class.equals(type))
-                return new Pair<>(Types.Long, Long.toString(field.getLong(object)));
-            if (float.class.equals(type))
-                return new Pair<>(Types.Float, Float.toString(field.getFloat(object)));
-            if (double.class.equals(type))
-                return new Pair<>(Types.Double, Double.toString(field.getDouble(object)));
-            if (char.class.equals(type))
-                return new Pair<>(Types.Character, Character.toString(field.getChar(object)));
-            if (boolean.class.equals(type))
-                return new Pair<>(Types.Boolean, Boolean.toString(field.getBoolean(object)));
-            if (String.class.equals(type) && field.get(object) != null)
-                return new Pair<>(Types.String, screen((String)field.get(object)));
-        } catch (IllegalAccessException ignored) {}
-        return null;
-    }
-
-    private String fieldToString(Field field, Object object) {
-        field.setAccessible(true);
-        Pair<Types, String> special = fromPrimitiveOrSpecial(field, object);
-        if(special != null)
-            return "(" + field.getName() + "|p|" + special.getKey() + "|" + special.getValue() + ")";
-        try {
-            Object next = field.get(object);
-            if(next != null) {
-                Pair<Types, String> array = fromArray(field, next);
-                if (array != null)
-                    return "(" + field.getName() + (array.getKey() == null ? "|a|" : "|pa|")
-                            + Array.getLength(next) + "|" +
-                            (array.getKey() == null
-                                    ? field.getType().getComponentType().getSimpleName()
-                                    : array.getKey()) +
-                            "|" + array.getValue() + ")";
-                return "(" + field.getName() + "|o|" + field.getDeclaringClass().getSimpleName() + "|" +
-                        allFieldsToString(next) + ")";
-            }
-        } catch (IllegalAccessException ignored) {}
-        return "";
-    }
-
-    private String allFieldsToString(Object object) {
-        return getAllFields(object).stream()
-                .map(f -> fieldToString(f, object))
-                .collect(Collectors.joining(""));
-    }
-
-    private String screen(String string) {
-        StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < string.length(); i++) {
-            char current = string.charAt(i);
-            if(service.indexOf(current) != -1)
-                sb.append('#');
-            sb.append(current);
-        }
-        return sb.toString();
-    }
-
-    public Object deserialize(byte[] raw) throws ParseException {
-        return wrapExceptions(() -> {
-            String input = new String(raw, StandardCharsets.UTF_8);
-            StringReader reader = new StringReader(input);
-            String start = readUntil(reader, "(");
-            if (!start.startsWith(preamble))
-                throw new ParseException("Data does not start with preamble");
-            Object result = Class.forName(usedPackage + "." + start.substring(preamble.length(), start.length()))
-                    .getConstructor().newInstance();
-            readFields(reader, result);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            properties.store(byteArrayOutputStream, null);
+            byte[] result = byteArrayOutputStream.toByteArray();
+            byteArrayOutputStream.close();
             return result;
-        });
-    }
-
-    private void readFields(StringReader reader, Object object) throws ParseException {
-        while (true) {
-            int next = safeRead(reader);
-            if(next == -1)
-                throw new ParseException("Unexpected end of stream");
-            if((char)next == '(')
-                readField(reader, object);
-            else if((char)next == ')')
-                return;
-            else
-                throw new ParseException("Unexpected character");
-        }
-    }
-
-    private void readField(StringReader reader, Object object) throws ParseException {
-        wrapExceptions(() -> {
-            Field field = object.getClass().getField(readUntil(reader, "|"));
-            field.setAccessible(true);
-            String category = readUntil(reader, "|");
-
-            if (category.equals("o")) {
-                String className = readUntil(reader, "|");
-                Constructor<?> constructor = Class.forName(usedPackage + "." + className).getConstructor();
-                constructor.setAccessible(true);
-                Object n = constructor.newInstance();
-                readFields(reader, n);
-                try {
-                    field.set(object, n);
-                } catch (IllegalArgumentException e) {
-                    throw new ParseException("Field has a different type", e);
-                }
-            } else if (category.equals("p")) {
-                String className = readUntil(reader, "|");
-                setPrimitiveOrSpecial(readUntil(reader, ")"), Types.valueOf(className), field, object);
-            } else if (category.equals("a") || category.equals("pa")) {
-                int length;
-                try {
-                    length = Integer.parseInt(readUntil(reader, "|"));
-                } catch (NumberFormatException e) {
-                    throw new ParseException("Invalid array length.");
-                }
-                String className = readUntil(reader, "|");
-                Object array = Array.newInstance(Class.forName(usedPackage + "." + className), length);
-                readElements(reader, array, category.equals("pa") ? Types.valueOf(className) : null, length);
-                field.set(object, array);
-            }
+        } catch (IOException exception) {
+            System.out.println("Cannot serialize class: " + exception.getMessage());
             return null;
-        });
-    }
-
-    private void readElements(StringReader reader, Object array, Types type, int length) throws ParseException {
-        try {
-            for(int i = 0; i < length; i++)
-                if (type == null) {
-                    Array.set(array, i, readObjectInArray(reader));
-                    safeRead(reader);
-                }
-                else if (type == Types.Byte)
-                        Array.setByte(array, i, Byte.valueOf(readUntil(reader, ",)")));
-                else if (type == Types.Short)
-                        Array.setShort(array, i, Short.valueOf(readUntil(reader, ",)")));
-                else if (type == Types.Integer)
-                        Array.setInt(array, i, Integer.valueOf(readUntil(reader, ",)")));
-                else if (type == Types.Long)
-                        Array.setLong(array, i, Long.valueOf(readUntil(reader, ",)")));
-                else if (type == Types.Float)
-                        Array.setFloat(array, i, Float.valueOf(readUntil(reader, ",)")));
-                else if (type == Types.Double)
-                        Array.setDouble(array, i, Double.valueOf(readUntil(reader, ",)")));
-                else if (type == Types.Character)
-                        Array.setChar(array, i, charValueOf(readUntil(reader, ",)")));
-                else if (type == Types.Boolean)
-                        Array.setBoolean(array, i, booleanValueOf(readUntil(reader, ",)")));
-                else if (type == Types.String)
-                        Array.set(array, i, readUntil(reader, ",)"));
-        } catch (NumberFormatException e) {
-            throw new ParseException("Failed parsing to " + type.toString(), e);
-        } catch (IllegalArgumentException e) {
-            throw new ParseException("Field has a different type", e);
         }
     }
 
-    private Object readObjectInArray(StringReader reader) throws ParseException {
-        return wrapExceptions(() -> {
-            int c = safeRead(reader);
-            if (c == -1)
-                throw new ParseException("Unexpected end of stream");
-            if (c != '(')
-                throw new ParseException("Not a object");
-            Constructor<?> constructor = Class
-                    .forName(usedPackage + "." + readUntil(reader, "|"))
-                    .getConstructor();
-            constructor.setAccessible(true);
-            Object object = constructor.newInstance();
-            readFields(reader, object);
-            return object;
-        });
+    public static Properties classToProperties(Object object) {
+        Coder coder = new Coder();
+        return coder.toProperties(object);
     }
 
-    private void setPrimitiveOrSpecial(String value, Types type, Field field, Object object)
-            throws ParseException, IllegalAccessException {
+    public Object deserialize(byte[] bytes) throws ParseException {
         try {
-            if (type == Types.Byte)
-                field.setByte(object, Byte.valueOf(value));
-            if (type == Types.Short)
-                field.setShort(object, Short.valueOf(value));
-            if (type == Types.Integer)
-                field.setInt(object, Integer.valueOf(value));
-            if (type == Types.Long)
-                field.setLong(object, Long.valueOf(value));
-            if (type == Types.Float)
-                field.setFloat(object, Float.valueOf(value));
-            if (type == Types.Double)
-                field.setDouble(object, Double.valueOf(value));
-            if (type == Types.Character)
-                field.setChar(object, charValueOf(value));
-            if (type == Types.Boolean)
-                field.setBoolean(object, booleanValueOf(value));
-            if (type == Types.String)
-                field.set(object, value);
-        } catch (NumberFormatException e) {
-            throw new ParseException("Failed parsing to " + type.toString(), e);
-        } catch (IllegalArgumentException e) {
-            throw new ParseException("Field has a different type", e);
-        }
-    }
-
-    private char charValueOf(String s) {
-        if(s.length() != 1)
-            throw new NumberFormatException();
-        return s.charAt(0);
-    }
-
-    private boolean booleanValueOf(String s) {
-        if(s.equals("true"))
-            return true;
-        else if(s.equals("false"))
-            return false;
-        throw new NumberFormatException();
-    }
-
-    private String readUntil(StringReader reader, String symbols) throws ParseException {
-        StringBuilder sb = new StringBuilder();
-        boolean screen = false;
-        while (true) {
-            int next = safeRead(reader);
-            if (next == -1)
-                throw new ParseException("Unexpected end of stream");
-            char current = (char) next;
-
-            if (screen)
-                if (service.indexOf(current) != -1) {
-                    sb.append(current);
-                    screen = false;
-                } else
-                    throw new ParseException("Invalid screening");
-            else if (symbols.indexOf(current) != -1)
-                return sb.toString();
-            else if (current == screeningSymbol)
-                screen = true;
-            else if (service.indexOf(current) == -1)
-                sb.append(current);
-            else
-                throw new ParseException("Unexpected service symbol");
-        }
-    }
-
-    private int safeRead(StringReader reader) {
-        try {
-            return reader.read();
+            Properties properties = new Properties();
+            ByteArrayInputStream byteInputStream = new ByteArrayInputStream(bytes);
+            properties.load(byteInputStream);
+            return classFromProperties(properties);
         } catch (IOException e) {
-            throw new IllegalArgumentException(e);
+            throw new ParseException("Serialization failed", e);
         }
     }
 
-    private <R> R wrapExceptions(CheckedFunction<R> f) throws ParseException {
-        try {
-            return f.run();
-        } catch (NoSuchFieldException e) {
-            throw new ParseException("Field not found: " + e.getMessage(), e);
-        } catch (ClassNotFoundException e) {
-            throw new ParseException("Class not found", e);
-        } catch (NoSuchMethodException e) {
-            throw new ParseException("Class does not have a constructor without parameters", e);
-        } catch (InvocationTargetException e) {
-            throw new ParseException("Class constructor threw a exception", e);
-        } catch (InstantiationException e) {
-            throw new ParseException("Class is abstract", e);
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException();
+    public static Object classFromProperties(Properties properties) {
+        Decoder decoder = new Decoder();
+        return decoder.fromProperties(properties);
+    }
+
+    static List<Field> makeFieldsList(Class mClass) {
+        ArrayList<Field> fieldsList = new ArrayList<>();
+        Class currentClass = mClass;
+        while (currentClass != null) {
+            Field[] fields = currentClass.getDeclaredFields();
+            fieldsList.addAll(Arrays.asList(fields));
+            currentClass = currentClass.getSuperclass();
+        }
+        Iterator<Field> fieldIterator = fieldsList.iterator();
+        while (fieldIterator.hasNext()) {
+            Field field = fieldIterator.next();
+            if (Modifier.isStatic(field.getModifiers())) fieldIterator.remove();
+            if (field.getName().startsWith("class$")) fieldIterator.remove();
+        }
+        return fieldsList;
+    }
+
+
+    static class Coder {
+
+        interface FieldReader {
+            String getValue(Field field, Object object) throws IllegalAccessException;
+        }
+
+        static HashMap<Class, FieldReader> readers = new HashMap<>();
+
+        static {
+            readers.put(Integer.TYPE, (field, object) -> String.valueOf(field.getInt(object)));
+            readers.put(Character.TYPE, (field, object) -> String.valueOf(field.getChar(object)));
+            readers.put(Byte.TYPE, (field, object) -> String.valueOf(field.getByte(object)));
+            readers.put(Short.TYPE, (field, object) -> String.valueOf(field.getShort(object)));
+            readers.put(Long.TYPE, (field, object) -> String.valueOf(field.getLong(object)));
+            readers.put(Boolean.TYPE, (field, object) -> String.valueOf(field.getBoolean(object)));
+            readers.put(Double.TYPE, (field, object) -> String.valueOf(field.getDouble(object)));
+            readers.put(Float.TYPE, (field, object) -> String.valueOf(field.getFloat(object)));
+        }
+
+        private Properties propertiesData;
+        private int classCount;
+        private int arrayCount;
+        private HashMap<IdentityKeyWrapper, String> processedObjects;
+
+        Properties toProperties(Object object) {
+            propertiesData = new Properties();
+            classCount = 0;
+            arrayCount = 0;
+            processedObjects = new HashMap<>();
+            String strMainObjectId = storeObject(object);
+            propertiesData.put("mainObjectID", String.valueOf(strMainObjectId));
+            return propertiesData;
+        }
+
+        private String storeObject(Object object) {
+            if (object == null) return null;
+            String strResult;
+            Class mClass = object.getClass();
+            if (mClass.equals(String.class)) strResult = (String) object;
+            else if (mClass.isArray()) strResult = storeArrayImplementation(object);
+            else strResult = storeObjectImplementation(object);
+            return strResult;
+        }
+
+        private String storeObjectImplementation(Object object) {
+            if (object == null) return null;
+            IdentityKeyWrapper objectKey = new IdentityKeyWrapper(object);
+            String objectID = processedObjects.get(objectKey);
+            if (objectID != null) return objectID;
+            classCount++;
+            String strResult = "o" + classCount;
+            processedObjects.put(objectKey, strResult);
+            String strKeyPrefix = strResult + ".";
+            String strFieldPrefix = strKeyPrefix + "f.";
+            Class mClass = object.getClass();
+            propertiesData.put(strKeyPrefix + "className", mClass.getName());
+            List<Field> fieldsList = makeFieldsList(mClass);
+            for (Field field : fieldsList) {
+                Class fieldType = field.getType();
+                String strFieldName = field.getName();
+                String strFieldValue;
+                try {
+                    try {
+                        field.setAccessible(true);
+                    } catch (SecurityException exception) {
+                        System.out.println("Security exception: " + exception.getMessage());
+                    }
+                    FieldReader fieldReader = readers.get(fieldType);
+                    if (fieldReader != null) strFieldValue = fieldReader.getValue(field, object);
+                    else strFieldValue = storeObject(field.get(object));
+                } catch (IllegalAccessException exception) {
+                    System.out.println("No access to field: " + exception.getMessage());
+                    strFieldValue = null;
+                }
+                if (strFieldValue != null)
+                    propertiesData.setProperty(strFieldPrefix + strFieldName, String.valueOf(strFieldValue));
+                else propertiesData.setProperty(strFieldPrefix + strFieldName + ".isNull", "true");
+            }
+            return strResult;
+        }
+
+        private String storeArrayImplementation(Object object) {
+            if (object == null) return null;
+            IdentityKeyWrapper objectKey = new IdentityKeyWrapper(object);
+            String objectID = processedObjects.get(objectKey);
+            if (objectID != null) return objectID;
+            arrayCount++;
+            String strResult = "a" + arrayCount;
+            processedObjects.put(objectKey, strResult);
+            Class mClass = object.getClass();
+            Class fieldType = mClass.getComponentType();
+            String strKeyPrefix = strResult + ".";
+            String strFieldPrefix = strKeyPrefix + "f.";
+            int arrayLength = Array.getLength(object);
+            propertiesData.put(strKeyPrefix + "className", fieldType.getName());
+            propertiesData.put(strKeyPrefix + "length", String.valueOf(arrayLength));
+            String strFieldValue;
+            for (int arrayIndex = 0; arrayIndex < arrayLength; arrayIndex++) {
+                if (fieldType.equals(Integer.TYPE))
+                    strFieldValue = String.valueOf(Array.getInt(object, arrayIndex));
+                else if (fieldType.equals(Character.TYPE))
+                    strFieldValue = String.valueOf(Array.getChar(object, arrayIndex));
+                else if (fieldType.equals(Byte.TYPE))
+                    strFieldValue = String.valueOf(Array.getByte(object, arrayIndex));
+                else if (fieldType.equals(Short.TYPE))
+                    strFieldValue = String.valueOf(Array.getShort(object, arrayIndex));
+                else if (fieldType.equals(Long.TYPE))
+                    strFieldValue = String.valueOf(Array.getLong(object, arrayIndex));
+                else if (fieldType.equals(Boolean.TYPE))
+                    strFieldValue = String.valueOf(Array.getBoolean(object, arrayIndex));
+                else if (fieldType.equals(Double.TYPE))
+                    strFieldValue = String.valueOf(Array.getDouble(object, arrayIndex));
+                else if (fieldType.equals(Float.TYPE))
+                    strFieldValue = String.valueOf(Array.getFloat(object, arrayIndex));
+                else {
+                    Object value = Array.get(object, arrayIndex);
+                    strFieldValue = storeObject(value);
+                }
+                String strFieldName = "" + arrayIndex;
+                if (strFieldValue != null)
+                    propertiesData.setProperty(strFieldPrefix + strFieldName, String.valueOf(strFieldValue));
+                else propertiesData.setProperty(strFieldPrefix + strFieldName + ".isNull", "true");
+            }
+            return strResult;
         }
     }
 
-    @FunctionalInterface
-    public interface CheckedFunction<R> {
-        R run() throws NoSuchFieldException,
-                ClassNotFoundException,
-                NoSuchMethodException,
-                InvocationTargetException,
-                InstantiationException,
-                IllegalAccessException,
-                ParseException;
+    protected static class Decoder {
+        private Properties propertiesData;
+        private HashMap<String, Object> processedObjects;
+
+        Object fromProperties(Properties properties) {
+            propertiesData = properties;
+            processedObjects = new HashMap<>();
+            String strMainObjectID = (String) propertiesData.get("mainObjectID");
+            return restoreObject(strMainObjectID);
+        }
+
+        private Object restoreObject(String strValue) {
+            if (strValue == null) return null;
+            Object result;
+            if (strValue.startsWith("a")) result = restoreArrayImplementation(strValue);
+            else if (strValue.startsWith("o")) result = restoreObjectImplementation(strValue);
+            else result = strValue;
+            return result;
+        }
+
+        private Object restoreObjectImplementation(String strID) {
+            if (strID == null || Objects.equals(strID, "o0")) return null;
+            Object result = processedObjects.get(strID);
+            if (result == null)
+                try {
+                    String strKeyPrefix = strID + ".";
+                    String strFieldPrefix = strKeyPrefix + "f.";
+                    String strClassType = (String) propertiesData.get(strKeyPrefix + "className");
+                    Class mClass = Class.forName(strClassType);
+                    Constructor constructor = Class.forName(strClassType).getDeclaredConstructor();
+                    try {
+                        constructor.setAccessible(true);
+                    } catch (SecurityException exception) {
+                        System.out.println("Security exception: " + exception.getMessage());
+                    }
+                    result = constructor.newInstance();
+                    processedObjects.put(strID, result);
+                    List<Field> fieldsList = makeFieldsList(mClass);
+                    for (Field field : fieldsList) {
+                        Class fieldType = field.getType();
+                        String strFieldName = field.getName();
+                        String strFieldValue = propertiesData.getProperty(strFieldPrefix + strFieldName);
+                        boolean bIsNull = Boolean.parseBoolean(
+                                propertiesData.getProperty(strFieldPrefix + strFieldName + ".isNull", "false"));
+                        try {
+                            try {
+                                field.setAccessible(true);
+                            } catch (SecurityException exception) {
+                                System.out.println("Security exception: " + exception.getMessage());
+                            }
+                            if (fieldType.equals(Integer.TYPE))
+                                field.setInt(result, Integer.parseInt(strFieldValue));
+                            else if (fieldType.equals(Character.TYPE))
+                                field.setChar(result, strFieldValue.charAt(0));
+                            else if (fieldType.equals(Byte.TYPE))
+                                field.setByte(result, Byte.parseByte(strFieldValue));
+                            else if (fieldType.equals(Short.TYPE))
+                                field.setShort(result, Short.parseShort(strFieldValue));
+                            else if (fieldType.equals(Long.TYPE))
+                                field.setLong(result, Long.parseLong(strFieldValue));
+                            else if (fieldType.equals(Boolean.TYPE))
+                                field.setBoolean(result, Boolean.parseBoolean(strFieldValue));
+                            else if (fieldType.equals(Double.TYPE))
+                                field.setDouble(result, Double.parseDouble(strFieldValue));
+                            else if (fieldType.equals(Float.TYPE))
+                                field.setFloat(result, Float.parseFloat(strFieldValue));
+                            else if (fieldType.equals(String.class))
+                                field.set(result, strFieldValue);
+                            else {
+                                if (bIsNull) field.set(result, null);
+                                else field.set(result, restoreObject(strFieldValue));
+                            }
+                        } catch (IllegalAccessException exception) {
+                            System.out.println("No access to field: " + exception.getMessage());
+                        }
+                    }
+                } catch (Exception exception) {
+                    System.out.println("Can not restore class: " + exception.getMessage());
+                    result = null;
+                }
+            return result;
+        }
+
+        private Object restoreArrayImplementation(String strID) {
+            if (strID == null || Objects.equals(strID, "a0")) return null;
+            Object result = processedObjects.get(strID);
+            if (result == null)
+                try {
+                    String strKeyPrefix = strID + ".";
+                    String strFieldPrefix = strKeyPrefix + "f.";
+                    String strComponentType = (String) propertiesData.get(strKeyPrefix + "className");
+                    int arrayLength = Integer.parseInt((String) propertiesData.get(strKeyPrefix + "length"));
+                    Class fieldType;
+                    if (Integer.TYPE.getName().equals(strComponentType)) fieldType = Integer.TYPE;
+                    else if (Character.TYPE.getName().equals(strComponentType)) fieldType = Character.TYPE;
+                    else if (Byte.TYPE.getName().equals(strComponentType)) fieldType = Byte.TYPE;
+                    else if (Short.TYPE.getName().equals(strComponentType)) fieldType = Short.TYPE;
+                    else if (Long.TYPE.getName().equals(strComponentType)) fieldType = Long.TYPE;
+                    else if (Boolean.TYPE.getName().equals(strComponentType)) fieldType = Boolean.TYPE;
+                    else if (Double.TYPE.getName().equals(strComponentType)) fieldType = Double.TYPE;
+                    else if (Float.TYPE.getName().equals(strComponentType)) fieldType = Float.TYPE;
+                    else if (String.class.getName().equals(strComponentType)) fieldType = String.class;
+                    else fieldType = Class.forName(strComponentType);
+                    result = Array.newInstance(fieldType, arrayLength);
+                    processedObjects.put(strID, result);
+                    for (int arrayIndex = 0; arrayIndex < arrayLength; arrayIndex++) {
+                        String strFieldName = "" + arrayIndex;
+                        String strFieldValue = propertiesData.getProperty(strFieldPrefix + strFieldName);
+                        boolean bIsNull = Boolean.parseBoolean(
+                                propertiesData.getProperty(strFieldPrefix + strFieldName + ".isNull", "false"));
+                        if (fieldType.equals(Integer.TYPE))
+                            Array.setInt(result, arrayIndex, Integer.parseInt(strFieldValue));
+                        else if (fieldType.equals(Character.TYPE))
+                            Array.setChar(result, arrayIndex, strFieldValue.charAt(0));
+                        else if (fieldType.equals(Byte.TYPE))
+                            Array.setByte(result, arrayIndex, Byte.parseByte(strFieldValue));
+                        else if (fieldType.equals(Short.TYPE))
+                            Array.setShort(result, arrayIndex, Short.parseShort(strFieldValue));
+                        else if (fieldType.equals(Long.TYPE))
+                            Array.setLong(result, arrayIndex, Long.parseLong(strFieldValue));
+                        else if (fieldType.equals(Boolean.TYPE))
+                            Array.setBoolean(result, arrayIndex, Boolean.parseBoolean(strFieldValue));
+                        else if (fieldType.equals(Double.TYPE))
+                            Array.setDouble(result, arrayIndex, Double.parseDouble(strFieldValue));
+                        else if (fieldType.equals(Float.TYPE))
+                            Array.setDouble(result, arrayIndex, Float.parseFloat(strFieldValue));
+                        else if (fieldType.equals(String.class))
+                            Array.set(result, arrayIndex, strFieldValue);
+                        else {
+                            if (bIsNull) Array.set(result, arrayIndex, null);
+                            else Array.set(result, arrayIndex, restoreObject(strFieldValue));
+                        }
+                    }
+                } catch (Exception exception) {
+                    System.out.println("Cannot restore array: " + exception.getMessage());
+                    result = null;
+                }
+            return result;
+        }
+    }
+
+    private static class IdentityKeyWrapper {
+
+        private Object objectKey;
+
+        IdentityKeyWrapper(Object objectKey) {
+            this.objectKey = objectKey;
+        }
+
+        public boolean equals(Object otherObject) {
+            return otherObject instanceof IdentityKeyWrapper
+                    && ((IdentityKeyWrapper) otherObject).objectKey == this.objectKey;
+        }
     }
 }

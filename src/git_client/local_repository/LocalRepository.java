@@ -3,6 +3,7 @@ package git_client.local_repository;
 import file_worker.FileWorker;
 import file_worker.executable.MD5Execution;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import serializator.ParseException;
 import serializator.Serializator;
 import util.serializable.FileContent;
@@ -13,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class LocalRepository implements ILocalRepository {
     public final Serializator serializator;
@@ -83,7 +85,11 @@ public class LocalRepository implements ILocalRepository {
     }
 
     private void replace(FileContent fc) throws IOException {
-        FileUtils.writeByteArrayToFile(Paths.get(fc.file).toFile(), fc.content.content);
+        File file = dir.resolve(Paths.get(fc.file)).toFile();
+        if(!file.exists())
+            if(!file.createNewFile())
+                throw new IOException("Failed to create file");
+        FileUtils.writeByteArrayToFile(file, fc.content.content);
     }
 
     private boolean isChanged(FileContent[] changes, FileContent file) {
@@ -107,16 +113,17 @@ public class LocalRepository implements ILocalRepository {
     @Override
     public FileContent[] getChanges() throws IOException {
         try {
-            File file = dir.resolve("gt").resolve("hashes").toFile();
-            Hashes hashes = (Hashes) serializator.deserialize(FileUtils.readFileToByteArray(file));
+            Path hashes = dir.resolve("gt").resolve("hashes");
+            Path meta = dir.resolve("gt").resolve("meta");
+            Hashes h = (Hashes) serializator.deserialize(FileUtils.readFileToByteArray(hashes.toFile()));
             Vector<FileContent> result = new Vector<>();
             Files.walk(dir).filter(Files::isRegularFile).forEach((f) -> {
                 try {
-                    Byte[] old = hashes.get(f);
+                    Byte[] old = h.get(f);
                     byte[] content = FileUtils.readFileToByteArray(f.toFile());
                     Byte[] hash = md5.md5.get(content);
-                    if (old == null || !Arrays.equals(old, hash))
-                        result.add(new FileContent(f.toString(), content));
+                    if (!hashes.equals(f) && !meta.equals(f) && (old == null || !Arrays.equals(old, hash)))
+                        result.add(new FileContent(dir.relativize(f).toString(), content));
                 } catch (IOException ignored) {}
             });
             return result.toArray(new FileContent[0]);
@@ -130,7 +137,7 @@ public class LocalRepository implements ILocalRepository {
         if(!worker.execute())
             throw new IOException("Failed to count hashes");
         HashPair[] hashes = md5.hashes.entrySet().stream()
-                .map(e -> new HashPair(e.getKey().toPath(), e.getValue()))
+                .map(e -> new HashPair(e.getKey().toString(), ArrayUtils.toPrimitive(e.getValue())))
                 .toArray(HashPair[]::new);
         File file = dir.resolve("gt").resolve("hashes").toFile();
         FileUtils.writeByteArrayToFile(file, serializator.serialize(new Hashes(hashes)));

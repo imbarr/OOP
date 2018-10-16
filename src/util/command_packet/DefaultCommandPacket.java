@@ -13,7 +13,7 @@ public class DefaultCommandPacket implements ICommandPacket {
     private Serializator serializator;
 
     public DefaultCommandPacket(String usedPackage) {
-        this.serializator = new Serializator(usedPackage);
+        this.serializator = new Serializator();
     }
 
     @Override

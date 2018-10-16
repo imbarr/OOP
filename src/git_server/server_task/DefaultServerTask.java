@@ -67,7 +67,8 @@ public class DefaultServerTask extends ServerTask {
                 .filter(Files::isRegularFile)
                 .forEach(f -> {
                     try {
-                        result.add(new FileContent(f.toString(), FileUtils.readFileToByteArray(f.toFile())));
+                        result.add(new FileContent(ver.relativize(f).toString(),
+                                FileUtils.readFileToByteArray(f.toFile())));
                     } catch (IOException ignored) {}
                 });
         return new GetResult(result.toArray(new FileContent[0]));
@@ -97,9 +98,9 @@ public class DefaultServerTask extends ServerTask {
         if(!current.toFile().mkdir())
             throw new IOException("failed to create folder");
         for(FileContent fc : commit.changes) {
-            File f = Paths.get(fc.file).toFile();
+            File f = current.resolve(Paths.get(fc.file)).toFile();
             File parent = f.getParentFile();
-            if(parent.exists())
+            if(parent != null && !parent.exists())
                 if(!parent.mkdirs())
                     throw new IOException();
             if(!f.createNewFile())
