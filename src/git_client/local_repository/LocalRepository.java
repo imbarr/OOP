@@ -23,15 +23,20 @@ public class LocalRepository implements ILocalRepository {
     public LocalRepository(Serializator serializator, Path dir) throws IOException {
         this.serializator = serializator;
         md5 = new MD5Execution();
-        changeDirectory(dir);
+        if(!dir.toFile().exists())
+            if(!dir.toFile().mkdirs())
+                throw new IOException("failed to create dirs");
+        this.dir = dir;
         worker = new FileWorker(md5, dir.toFile(), true);
     }
 
     @Override
-    public void changeDirectory(Path dir) throws IOException {
-        if(!dir.toFile().isDirectory())
+    public void changeDirectory(Path path) throws IOException {
+        if(!path.isAbsolute())
+            path = dir.resolve(path);
+        if(!path.toFile().isDirectory())
             throw new IOException("Not a dir");
-        this.dir = dir;
+        this.dir = path;
     }
 
     @Override

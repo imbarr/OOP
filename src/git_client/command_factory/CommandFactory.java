@@ -32,7 +32,7 @@ public class CommandFactory implements ICommandFactory {
         switch (list[0].toLowerCase()) {
             case "add":
                 checkArgs(list, i -> i == 2);
-                return new Add(client, packet, list[2]);
+                return new Add(client, packet, list[1]);
             case "clone":
                 checkArgs(list, i -> i >= 3);
                 boolean addDir = true;

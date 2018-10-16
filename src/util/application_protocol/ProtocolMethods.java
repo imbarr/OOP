@@ -4,9 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class ProtocolMethods {
     public static byte[] readAll(InputStream stream) throws IOException, ApplicationProtocolException {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {}
         StringBuilder length = new StringBuilder();
         while(true) {
             int next = stream.read();
@@ -31,5 +35,6 @@ public class ProtocolMethods {
         stream.write(length);
         stream.write(0);
         stream.write(data);
+        System.out.println(Arrays.toString(data));
     }
 }

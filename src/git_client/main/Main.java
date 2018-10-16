@@ -26,7 +26,7 @@ public class Main {
         ICommandFactory factory;
         try {
             serializator = new Serializator("client.local_repository");
-            local = new LocalRepository(serializator, Paths.get("./repos"));
+            local = new LocalRepository(serializator, Paths.get("./client_repos"));
             client = new Client(InetAddress.getLocalHost(), 9999);
             packet = new ClientCommandPacket(new DefaultCommandPacket("util"));
             factory = new CommandFactory(client, packet, local);
@@ -36,11 +36,11 @@ public class Main {
         }
         Scanner scan = new Scanner(System.in);
         while (true) {
-            String in = scan.next().toLowerCase();
+            String in = scan.nextLine().toLowerCase();
             if(in.equals("quit") || in.equals("exit") || in.equals("q"))
                 break;
             try {
-                ICommand command = factory.parse(scan.next());
+                ICommand command = factory.parse(in);
                 System.out.println(command.execute());
             } catch (SyntaxException e) {
                 System.out.println("Command not recognized");

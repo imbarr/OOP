@@ -22,9 +22,11 @@ public class Client {
     }
 
     public byte[] send(byte[] data) throws IOException, ApplicationProtocolException {
-        try(Socket s = socket; OutputStream os = s.getOutputStream(); InputStream is = s.getInputStream()) {
+        try(Socket s = socket) {
             s.connect(new InetSocketAddress(address, port));
+            OutputStream os = s.getOutputStream();
             ProtocolMethods.writeAll(data, os);
+            InputStream is = s.getInputStream();
             return ProtocolMethods.readAll(is);
         }
     }
