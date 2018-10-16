@@ -11,18 +11,16 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class Client {
-    private Socket socket;
     private InetAddress address;
     private int port;
 
     public Client(InetAddress address, int port) {
-        socket = new Socket();
         this.address = address;
         this.port = port;
     }
 
     public byte[] send(byte[] data) throws IOException, ApplicationProtocolException {
-        try(Socket s = socket) {
+        try(Socket s = new Socket()) {
             s.connect(new InetSocketAddress(address, port));
             OutputStream os = s.getOutputStream();
             ProtocolMethods.writeAll(data, os);

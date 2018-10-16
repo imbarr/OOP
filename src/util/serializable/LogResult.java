@@ -1,13 +1,12 @@
-package util.result;
+package util.serializable;
 
-import java.net.InetAddress;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.stream.Collectors;
 
 public class LogResult extends Result {
-    public final LogUnit[] commits;
+    public LogUnit[] commits;
+
+    public LogResult() {}
 
     public LogResult(LogUnit[] commits) {
         this.commits = commits;

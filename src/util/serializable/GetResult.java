@@ -1,9 +1,9 @@
-package util.result;
-
-import util.procedure.FileContent;
+package util.serializable;
 
 public class GetResult extends Result {
-    public final FileContent[] files;
+    public FileContent[] files;
+
+    public GetResult() {}
 
     public GetResult(FileContent[] files) {
         super();

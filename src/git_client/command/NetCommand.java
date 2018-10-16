@@ -5,8 +5,8 @@ import git_client.command_packet.ClientCommandPacket;
 import git_client.command_packet.NotAResultException;
 import util.application_protocol.ApplicationProtocolException;
 import util.command_packet.CommandPacketException;
-import util.procedure.IProcedure;
-import util.result.Result;
+import util.serializable.IProcedure;
+import util.serializable.Result;
 
 import java.io.IOException;
 

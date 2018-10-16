@@ -1,4 +1,4 @@
-package util.procedure;
+package util.serializable;
 
 public class Commit implements IProcedure {
     public String repo;

@@ -5,6 +5,8 @@ import java.nio.file.Path;
 public class Hashes {
     public HashPair[] hashes;
 
+    public Hashes() {}
+
     public Hashes(HashPair[] hashes) {
         this.hashes = hashes;
     }

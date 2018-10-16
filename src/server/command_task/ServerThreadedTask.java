@@ -28,7 +28,7 @@ public class ServerThreadedTask extends ThreadedTask {
             byte[] result = ProtocolMethods.readAll(is);
             if (result == null)
                 return;
-            out.write(task.work(result));
+            ProtocolMethods.writeAll(task.work(result), out);
         } catch (IOException | ApplicationProtocolException ignored) {}
     }
 }

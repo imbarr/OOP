@@ -6,9 +6,9 @@ import git_client.command_packet.NotAResultException;
 import git_client.local_repository.ILocalRepository;
 import util.application_protocol.ApplicationProtocolException;
 import util.command_packet.CommandPacketException;
-import util.procedure.GetLatest;
-import util.result.GetResult;
-import util.result.Result;
+import util.serializable.GetLatest;
+import util.serializable.GetResult;
+import util.serializable.Result;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,7 +43,7 @@ public class Clone extends NetCommand {
         if(!(r instanceof GetResult))
             return r.toString();
         local.createHere(repoName);
-        local.addHere(((GetResult) r).files, false);
+        local.addHere(((GetResult) r).files, true);
         return r.toString();
     }
 }

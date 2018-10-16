@@ -5,7 +5,7 @@ import file_worker.executable.MD5Execution;
 import org.apache.commons.io.FileUtils;
 import serializator.ParseException;
 import serializator.Serializator;
-import util.procedure.FileContent;
+import util.serializable.FileContent;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -41,22 +41,31 @@ public class LocalRepository implements ILocalRepository {
 
     @Override
     public void createHere(String name) throws IOException {
-        File[] files = dir.toFile().listFiles();
-        if(files!=null) {
-            for (File f : files) {
-                if (f.isDirectory())
-                    FileUtils.deleteDirectory(f);
-                else if (!f.delete())
-                    throw new IOException("Failed to clear dir");
+        Path home = dir.resolve(name);
+        if(home.toFile().exists()) {
+            File[] files = home.toFile().listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isDirectory())
+                        FileUtils.deleteDirectory(f);
+                    else if (!f.delete())
+                        throw new IOException("Failed to clear dir");
+                }
             }
         }
-        Path gt = dir.resolve("gt");
+        else {
+            if(!home.toFile().mkdir())
+                throw new IOException("Failed to clear dir");
+        }
+        Path gt = home.resolve("gt");
         File meta = gt.resolve("meta").toFile();
+        File hashes = gt.resolve("hashes").toFile();
         if(!gt.toFile().mkdir()
-                || !gt.resolve("hashes").toFile().createNewFile()
+                || !hashes.createNewFile()
                 || !meta.createNewFile())
             throw new IOException("Failed to create files");
         FileUtils.writeByteArrayToFile(meta, serializator.serialize(new Meta(name)));
+        FileUtils.writeByteArrayToFile(hashes, serializator.serialize(new Hashes(new HashPair[0])));
     }
 
     @Override
@@ -74,7 +83,7 @@ public class LocalRepository implements ILocalRepository {
     }
 
     private void replace(FileContent fc) throws IOException {
-        FileUtils.writeByteArrayToFile(Paths.get(fc.file).toFile(), fc.content);
+        FileUtils.writeByteArrayToFile(Paths.get(fc.file).toFile(), fc.content.content);
     }
 
     private boolean isChanged(FileContent[] changes, FileContent file) {
@@ -91,7 +100,7 @@ public class LocalRepository implements ILocalRepository {
             Meta m = (Meta) serializator.deserialize(FileUtils.readFileToByteArray(meta));
             return m.name;
         } catch (ParseException e) {
-            throw new IOException("Failed to parse meta");
+            throw new IOException("Failed to parse meta", e);
         }
     }
 

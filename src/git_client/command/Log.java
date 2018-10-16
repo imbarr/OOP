@@ -6,10 +6,8 @@ import git_client.command_packet.NotAResultException;
 import git_client.local_repository.ILocalRepository;
 import util.application_protocol.ApplicationProtocolException;
 import util.command_packet.CommandPacketException;
-import util.procedure.GetLog;
-import util.procedure.IProcedure;
-import util.result.LogResult;
-import util.result.Result;
+import util.serializable.GetLog;
+import util.serializable.Result;
 
 import java.io.IOException;
 

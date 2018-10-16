@@ -1,9 +1,9 @@
-package util.procedure;
-
-import java.nio.file.Path;
+package util.serializable;
 
 public class Create implements IProcedure {
-    public final String name;
+    public String name;
+
+    public Create() {}
 
     public Create(String name) {
         this.name = name;

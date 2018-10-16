@@ -25,10 +25,11 @@ public class Main {
         ClientCommandPacket packet;
         ICommandFactory factory;
         try {
-            serializator = new Serializator("client.local_repository");
-            local = new LocalRepository(serializator, Paths.get("./client_repos"));
+            serializator = new Serializator("git_client.local_repository");
+            //TODO: Исправить!!!
+            local = new LocalRepository(serializator, Paths.get("C:\\Users\\Ilya\\IdeaProjects\\OOP\\client_repos"));
             client = new Client(InetAddress.getLocalHost(), 9999);
-            packet = new ClientCommandPacket(new DefaultCommandPacket("util"));
+            packet = new ClientCommandPacket(new DefaultCommandPacket("util.serializable"));
             factory = new CommandFactory(client, packet, local);
         } catch (IOException e) {
             System.out.println("IOError while initializing");

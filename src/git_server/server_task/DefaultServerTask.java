@@ -4,9 +4,7 @@ import org.apache.commons.io.FileUtils;
 import server.server_task.ServerTask;
 import util.command_packet.CommandPacketException;
 import util.command_packet.DefaultCommandPacket;
-import util.procedure.*;
-import util.result.GetResult;
-import util.result.Result;
+import util.serializable.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class DefaultServerTask extends ServerTask {
     private ServerCommandPacket packet = new ServerCommandPacket(
-            new DefaultCommandPacket("util.procedure"));
+            new DefaultCommandPacket("util.serializable"));
 
     private Path dir = Paths.get("./repos");
 
@@ -82,8 +80,10 @@ public class DefaultServerTask extends ServerTask {
                 .collect(Collectors.toSet())
                 .contains(create.name))
             return new Result(1, "Repo already exists");
-        if(!dir.resolve(create.name).toFile().mkdir())
-            throw new IOException();
+        Path repo = dir.resolve(create.name);
+        if(!repo.toFile().mkdir())
+            throw new IOException("Failed to create dir");
+        commit(new Commit(create.name, new FileContent[0]));
         return new Result();
     }
 
@@ -93,7 +93,7 @@ public class DefaultServerTask extends ServerTask {
             latest = 1.f;
         else
             latest += 1;
-        Path current = dir.resolve(latest.toString());
+        Path current = dir.resolve(commit.repo).resolve(latest.toString());
         if(!current.toFile().mkdir())
             throw new IOException("failed to create folder");
         for(FileContent fc : commit.changes) {
@@ -104,18 +104,18 @@ public class DefaultServerTask extends ServerTask {
                     throw new IOException();
             if(!f.createNewFile())
                 throw new IOException();
-            FileUtils.writeByteArrayToFile(f, fc.content);
+            FileUtils.writeByteArrayToFile(f, fc.content.content);
         }
         return new Result();
     }
 
-    private Float getLatest(String repoName) throws IOException {
+    private Float getLatest(String repoName) {
         File[] list = dir.resolve(repoName).toFile().listFiles();
         if(list == null)
             return null;
         Float max = null;
         for(File f: list) {
-            float n = Float.parseFloat(f.toString());
+            float n = Float.parseFloat(f.getName());
             if(max == null || n > max)
                 max = n;
         }

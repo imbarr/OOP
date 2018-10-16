@@ -2,8 +2,8 @@ package git_server.server_task;
 
 import util.command_packet.CommandPacketException;
 import util.command_packet.ICommandPacket;
-import util.procedure.IProcedure;
-import util.result.Result;
+import util.serializable.IProcedure;
+import util.serializable.Result;
 
 public class ServerCommandPacket {
     ICommandPacket packet;

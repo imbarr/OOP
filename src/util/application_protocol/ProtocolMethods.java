@@ -8,9 +8,6 @@ import java.util.Arrays;
 
 public class ProtocolMethods {
     public static byte[] readAll(InputStream stream) throws IOException, ApplicationProtocolException {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ignored) {}
         StringBuilder length = new StringBuilder();
         while(true) {
             int next = stream.read();
@@ -21,7 +18,7 @@ public class ProtocolMethods {
             length.append((char) next);
         }
         try {
-            int l = Integer.parseInt(length.toString());
+            int l = Integer.parseInt(length.toString(), 16);
             byte[] result = new byte[l];
             stream.readNBytes(result, 0, l);
             return result;
@@ -35,6 +32,5 @@ public class ProtocolMethods {
         stream.write(length);
         stream.write(0);
         stream.write(data);
-        System.out.println(Arrays.toString(data));
     }
 }

@@ -1,13 +1,15 @@
-package util.result;
+package util.serializable;
 
 import java.net.InetAddress;
 import java.util.Date;
 
 public class LogUnit {
-    public final Date date;
-    public final String version;
-    public final InetAddress ip;
-    public final String[] files;
+    public Date date;
+    public String version;
+    public InetAddress ip;
+    public String[] files;
+
+    public LogUnit() {}
 
     public LogUnit(Date date, String version, InetAddress ip, String[] files) {
         this.date = date;

@@ -36,7 +36,7 @@ public class CommandFactory implements ICommandFactory {
             case "clone":
                 checkArgs(list, i -> i >= 3);
                 boolean addDir = true;
-                if (list.length == 4 && list[4].equals("."))
+                if (list.length == 4 && list[3].equals("."))
                     addDir = false;
                 else if (list.length != 3)
                     throw new SyntaxException("Wrong flags");
@@ -51,7 +51,7 @@ public class CommandFactory implements ICommandFactory {
             case "revert":
                 checkArgs(list, i -> i >= 2);
                 boolean hard = false;
-                if(list.length == 3 && list[3].equals("--hard"))
+                if(list.length == 3 && list[2].equals("--hard"))
                     hard = true;
                 else if(list.length != 2)
                     throw new SyntaxException("Wrong flags");

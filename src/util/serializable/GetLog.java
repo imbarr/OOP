@@ -1,9 +1,9 @@
-package util.procedure;
-
-import java.nio.file.Path;
+package util.serializable;
 
 public class GetLog implements IProcedure {
-    public final String repo;
+    public String repo;
+
+    public GetLog() {}
 
     public GetLog(String repo) {
         this.repo = repo;

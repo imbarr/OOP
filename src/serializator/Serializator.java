@@ -143,7 +143,8 @@ public class Serializator {
 
     public Object deserialize(byte[] raw) throws ParseException {
         return wrapExceptions(() -> {
-            StringReader reader = new StringReader(new String(raw, StandardCharsets.UTF_8));
+            String input = new String(raw, StandardCharsets.UTF_8);
+            StringReader reader = new StringReader(input);
             String start = readUntil(reader, "(");
             if (!start.startsWith(preamble))
                 throw new ParseException("Data does not start with preamble");

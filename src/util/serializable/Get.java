@@ -1,10 +1,10 @@
-package util.procedure;
-
-import java.nio.file.Path;
+package util.serializable;
 
 public class Get implements IProcedure {
-    public final String repo;
-    public final String version;
+    public String repo;
+    public String version;
+
+    public Get() {}
 
     public Get(String repo, String version) {
         this.version = version;

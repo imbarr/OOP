@@ -1,10 +1,9 @@
 package git_client.local_repository;
 
-import util.procedure.FileContent;
+import util.serializable.FileContent;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 
 public interface ILocalRepository {
     void changeDirectory(Path directory) throws IOException;

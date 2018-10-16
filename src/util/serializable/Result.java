@@ -1,4 +1,4 @@
-package util.result;
+package util.serializable;
 
 public class Result {
     public int error;

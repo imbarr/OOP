@@ -1,9 +1,9 @@
-package util.procedure;
-
-import java.nio.file.Path;
+package util.serializable;
 
 public class GetLatest implements IProcedure {
-    public final String repo;
+    public String repo;
+
+    public GetLatest() {}
 
     public GetLatest(String repo) {
         this.repo = repo;

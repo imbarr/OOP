@@ -2,7 +2,6 @@ package util.command_packet;
 
 import serializator.ParseException;
 import serializator.Serializator;
-import util.procedure.IProcedure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,9 +54,9 @@ public class DefaultCommandPacket implements ICommandPacket {
                 throw new IllegalArgumentException();
             }
         } catch (DataFormatException e) {
-            throw new CommandPacketException("Invalid compression");
+            throw new CommandPacketException("Invalid compression", e);
         } catch (ParseException e) {
-            throw new CommandPacketException("Invalid serialization");
+            throw new CommandPacketException("Invalid serialization", e);
         }
     }
 }

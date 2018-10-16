@@ -1,8 +1,7 @@
 package serializator.main;
 
 import serializator.Serializator;
-import util.procedure.FileContent;
-import util.procedure.Commit;
+import util.serializable.Commit;
 
 import java.nio.charset.StandardCharsets;
 

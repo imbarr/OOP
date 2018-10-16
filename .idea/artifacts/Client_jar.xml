@@ -1,0 +1,26 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Client:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Client_jar</output-path>
+    <root id="archive" name="OOP.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/git_client/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="OOP" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-io-2.6/commons-io-2.6.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-io-2.6/commons-io-2.6-tests.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-io-2.6/commons-io-2.6-javadoc.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-io-2.6/commons-io-2.6-sources.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-io-2.6/commons-io-2.6-test-sources.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-codec-1.11/commons-codec-1.11.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-codec-1.11/commons-codec-1.11-tests.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-codec-1.11/commons-codec-1.11-javadoc.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-codec-1.11/commons-codec-1.11-sources.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-codec-1.11/commons-codec-1.11-test-sources.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-lang3-3.8.1/commons-lang3-3.8.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-lang3-3.8.1/commons-lang3-3.8.1-tests.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-lang3-3.8.1/commons-lang3-3.8.1-javadoc.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-lang3-3.8.1/commons-lang3-3.8.1-sources.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="B:/Programs/Apache/commons-lang3-3.8.1/commons-lang3-3.8.1-test-sources.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
